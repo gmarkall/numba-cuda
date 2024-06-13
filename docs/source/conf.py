@@ -19,9 +19,15 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 
-
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
+try:
+    import nvidia_sphinx_theme  # noqa: F401
+    html_theme = "nvidia_sphinx_theme"
+except ImportError:
+    html_theme = "sphinx_rtd_theme"
+
 html_static_path = ['_static']
+html_favicon = "_static/numba-green-icon-rgb.svg"
+html_show_sphinx = False
