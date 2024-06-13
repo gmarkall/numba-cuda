@@ -9,8 +9,10 @@ Welcome to Numba CUDA's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   :hidden:
 
-
+   user/index.rst
+   reference/index.rst
 
 Indices and tables
 ==================
