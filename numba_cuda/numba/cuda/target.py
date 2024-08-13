@@ -141,6 +141,7 @@ class CUDATargetContext(BaseContext):
     @cached_property
     def call_conv(self):
         return CUDACallConv(self)
+        #return CUDACABICallConv(self)
 
     def mangler(self, name, argtypes, *, abi_tags=(), uid=None):
         return itanium_mangler.mangle(name, argtypes, abi_tags=abi_tags,
@@ -369,7 +370,18 @@ class CUDATargetContext(BaseContext):
 
 
 class CUDACallConv(MinimalCallConv):
-    pass
+    def return_value(self, builder, retval):
+        return builder.ret_void()
+
+    def get_function_type(self, restype, argtypes):
+        """
+        Get the LLVM IR Function type for *restype* and *argtypes*.
+        """
+        arginfo = self._get_arg_packer(argtypes)
+        argtypes = list(arginfo.argument_types)
+        resptr = self.get_return_type(restype)
+        fnty = ir.FunctionType(ir.VoidType(), [resptr] + argtypes)
+        return fnty
 
 
 class CUDACABICallConv(BaseCallConv):
