@@ -1,6 +1,7 @@
 from llvmlite import ir
 from numba.core.typing.templates import ConcreteTemplate
-from numba.core import types, typing, funcdesc, config, compiler, sigutils
+from numba.core import (types, typing, funcdesc, config, compiler, sigutils,
+                        utils)
 from numba.core.compiler import (sanitize_compile_result_entries, CompilerBase,
                                  DefaultPassBuilder, Flags, Option,
                                  CompileResult)
@@ -12,6 +13,7 @@ from numba.core.typed_passes import (IRLegalization, NativeLowering,
                                      AnnotateTypes)
 from warnings import warn
 from numba.cuda.api import get_current_device
+from numba.cuda.cudadrv import nvvm
 from numba.cuda.target import CUDACABICallConv
 
 
@@ -247,6 +249,9 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
         builder, func, restype, argtypes, callargs)
     builder.ret(return_value)
 
+    if config.DUMP_LLVM:
+        utils.dump_llvm(fndesc, wrapper_module)
+
     library.add_ir_module(wrapper_module)
     library.finalize()
     return library
@@ -348,9 +353,13 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
         filename = code.co_filename
         linenum = code.co_firstlineno
 
-        lib, kernel = tgt.prepare_cuda_kernel(cres.library, cres.fndesc, debug,
-                                              lineinfo, nvvm_options, filename,
-                                              linenum)
+        #lib, kernel = tgt.prepare_cuda_kernel(cres.library, cres.fndesc, debug,
+        #                                      lineinfo, nvvm_options, filename,
+        #                                      linenum)
+        lib = cres.library
+        kernel = lib.get_function(cres.fndesc.llvm_func_name)
+        lib._entry_name = cres.fndesc.llvm_func_name
+        nvvm.set_cuda_kernel(kernel)
 
     if lto:
         code = lib.get_ltoir(cc=cc)

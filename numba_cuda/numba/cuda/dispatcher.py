@@ -14,7 +14,7 @@ from numba.core.typing.typeof import Purpose, typeof
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
 from numba.cuda.compiler import compile_cuda, CUDACompiler
-from numba.cuda.cudadrv import driver
+from numba.cuda.cudadrv import driver, nvvm
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (missing_launch_config_msg,
@@ -91,10 +91,16 @@ class _Kernel(serialize.ReduceMixin):
         code = self.py_func.__code__
         filename = code.co_filename
         linenum = code.co_firstlineno
-        lib, kernel = tgt_ctx.prepare_cuda_kernel(cres.library, cres.fndesc,
-                                                  debug, lineinfo, nvvm_options,
-                                                  filename, linenum,
-                                                  max_registers)
+        #lib, kernel = tgt_ctx.prepare_cuda_kernel(cres.library, cres.fndesc,
+        #                                          debug, lineinfo, nvvm_options,
+        #                                          filename, linenum,
+        #                                          max_registers)
+
+        # Need to make sur function doesnt have a return value
+        lib = cres.library
+        kernel = lib.get_function(cres.fndesc.llvm_func_name)
+        lib._entry_name = cres.fndesc.llvm_func_name
+        nvvm.set_cuda_kernel(kernel)
 
         if not link:
             link = []
@@ -302,7 +308,8 @@ class _Kernel(serialize.ReduceMixin):
         # Prepare kernel
         cufunc = self._codelibrary.get_cufunc()
 
-        if self.debug:
+        # if self.debug:
+        if False:
             excname = cufunc.name + "__errcode__"
             excmem, excsz = cufunc.module.get_global_symbol(excname)
             assert excsz == ctypes.sizeof(ctypes.c_int)
@@ -315,6 +322,8 @@ class _Kernel(serialize.ReduceMixin):
         kernelargs = []
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
+
+        kernelargs.insert(0, ctypes.c_void_p(0))
 
         if driver.USE_NV_BINDING:
             zero_stream = driver.binding.CUstream(0)
@@ -332,7 +341,7 @@ class _Kernel(serialize.ReduceMixin):
                              kernelargs,
                              cooperative=self.cooperative)
 
-        if self.debug:
+        if False: # self.debug:
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
             if excval.value != 0:
                 # An error occurred
