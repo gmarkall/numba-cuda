@@ -383,6 +383,9 @@ class CUDACallConv(MinimalCallConv):
         fnty = ir.FunctionType(ir.VoidType(), [resptr] + argtypes)
         return fnty
 
+    def return_user_exc(self, builder, exc, exc_args=None, loc=None,
+                        func_name=None):
+        builder.ret_void()
 
 class CUDACABICallConv(BaseCallConv):
     """
