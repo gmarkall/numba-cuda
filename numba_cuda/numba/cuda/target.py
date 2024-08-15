@@ -371,6 +371,11 @@ class CUDATargetContext(BaseContext):
 
 class CUDACallConv(MinimalCallConv):
     def return_value(self, builder, retval):
+        retptr = builder.function.args[0]
+        assert retval.type == retptr.type.pointee, \
+            (str(retval.type), str(retptr.type.pointee))
+        builder.store(retval, retptr)
+
         return builder.ret_void()
 
     def get_function_type(self, restype, argtypes):
