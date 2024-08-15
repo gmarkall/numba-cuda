@@ -387,6 +387,24 @@ class CUDACallConv(MinimalCallConv):
                         func_name=None):
         builder.ret_void()
 
+    def call_function(self, builder, callee, resty, argtys, args):
+        """
+        Call the Numba-compiled *callee*.
+        """
+        retty = callee.args[0].type.pointee
+        retvaltmp = cgutils.alloca_once(builder, retty)
+        # initialize return value
+        builder.store(cgutils.get_null_value(retty), retvaltmp)
+
+        arginfo = self._get_arg_packer(argtys)
+        args = arginfo.as_arguments(builder, args)
+        realargs = [retvaltmp] + list(args)
+        builder.call(callee, realargs)
+        retval = builder.load(retvaltmp)
+        out = self.context.get_returned_value(builder, resty, retval)
+        return None, out
+
+
 class CUDACABICallConv(BaseCallConv):
     """
     Calling convention aimed at matching the CUDA C/C++ ABI. The implemented

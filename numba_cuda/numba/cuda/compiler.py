@@ -1,6 +1,7 @@
 from llvmlite import ir
 from numba.core.typing.templates import ConcreteTemplate
-from numba.core import types, typing, funcdesc, config, compiler, sigutils
+from numba.core import (types, typing, funcdesc, config, compiler, sigutils,
+                        utils)
 from numba.core.compiler import (sanitize_compile_result_entries, CompilerBase,
                                  DefaultPassBuilder, Flags, Option,
                                  CompileResult)
@@ -246,6 +247,9 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
     _, return_value = context.call_conv.call_function(
         builder, func, restype, argtypes, callargs)
     builder.ret(return_value)
+
+    if config.DUMP_LLVM:
+        utils.dump_llvm(fndesc, wrapper_module)
 
     library.add_ir_module(wrapper_module)
     library.finalize()
