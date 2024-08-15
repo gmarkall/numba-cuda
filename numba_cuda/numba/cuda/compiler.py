@@ -13,6 +13,7 @@ from numba.core.typed_passes import (IRLegalization, NativeLowering,
                                      AnnotateTypes)
 from warnings import warn
 from numba.cuda.api import get_current_device
+from numba.cuda.cudadrv import nvvm
 from numba.cuda.target import CUDACABICallConv
 
 
@@ -352,9 +353,13 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
         filename = code.co_filename
         linenum = code.co_firstlineno
 
-        lib, kernel = tgt.prepare_cuda_kernel(cres.library, cres.fndesc, debug,
-                                              lineinfo, nvvm_options, filename,
-                                              linenum)
+        #lib, kernel = tgt.prepare_cuda_kernel(cres.library, cres.fndesc, debug,
+        #                                      lineinfo, nvvm_options, filename,
+        #                                      linenum)
+        lib = cres.library
+        kernel = lib.get_function(cres.fndesc.llvm_func_name)
+        lib._entry_name = cres.fndesc.llvm_func_name
+        nvvm.set_cuda_kernel(kernel)
 
     if lto:
         code = lib.get_ltoir(cc=cc)
