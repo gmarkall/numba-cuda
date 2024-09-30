@@ -102,6 +102,14 @@ class _Kernel(serialize.ReduceMixin):
         lib._entry_name = cres.fndesc.llvm_func_name
         nvvm.set_cuda_kernel(kernel)
 
+        for block in kernel.blocks:
+            for i, inst in enumerate(block.instructions):
+                if isinstance(inst, ir.Ret):
+                    void_ret = ir.Ret(block, "ret void")
+                    print(f"Replacing {inst} with {void_ret} in {block.name}")
+                    block.instructions[i] = void_ret
+                    block.set_terminator(void_ret)
+
         if not link:
             link = []
 

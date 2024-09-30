@@ -359,7 +359,30 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
+
+        for block in kernel.blocks:
+            for i, inst in enumerate(block.instructions):
+                if isinstance(inst, ir.Ret):
+                    void_ret = ir.Ret(block, "ret void")
+                    print(f"Replacing {inst} with {void_ret} in {block.name}")
+                    block.instructions[i] = void_ret
+                    block.terminator = void_ret
+
+        if isinstance(kernel.type, ir.PointerType):
+            new_type = ir.PointerType(ir.FunctionType(ir.VoidType(),
+                                                      kernel.type.pointee.args))
+        else:
+            new_type = ir.FunctionType(ir.VoidType(), kernel.type.args)
+
+        print(f"Replacing kernel type:\n{kernel.type}\nwith:\n{new_type}")
+
+        kernel.type = new_type
+        kernel.return_value = ir.ReturnValue(kernel, ir.VoidType())
+
         nvvm.set_cuda_kernel(kernel)
+
+    #breakpoint()
+    print(kernel.module)
 
     if lto:
         code = lib.get_ltoir(cc=cc)
