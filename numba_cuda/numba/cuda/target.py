@@ -370,6 +370,10 @@ class CUDATargetContext(BaseContext):
 
 
 class CUDACallConv(MinimalCallConv):
+    pass
+
+
+class CUDANoexceptCallConv(MinimalCallConv):
     def return_value(self, builder, retval):
         retptr = builder.function.args[0]
         assert retval.type == retptr.type.pointee, \
