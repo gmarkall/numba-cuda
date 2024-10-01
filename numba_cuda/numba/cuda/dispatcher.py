@@ -13,8 +13,8 @@ from numba.core.typing.typeof import Purpose, typeof
 
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
-from numba.cuda.compiler import compile_cuda, CUDACompiler
-from numba.cuda.cudadrv import driver, nvvm
+from numba.cuda.compiler import compile_cuda, CUDACompiler, kernel_fixup
+from numba.cuda.cudadrv import driver, drvapi
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (missing_launch_config_msg,
@@ -88,27 +88,10 @@ class _Kernel(serialize.ReduceMixin):
                             nvvm_options=nvvm_options,
                             cc=cc)
         tgt_ctx = cres.target_context
-        code = self.py_func.__code__
-        filename = code.co_filename
-        linenum = code.co_firstlineno
-        #lib, kernel = tgt_ctx.prepare_cuda_kernel(cres.library, cres.fndesc,
-        #                                          debug, lineinfo, nvvm_options,
-        #                                          filename, linenum,
-        #                                          max_registers)
-
-        # Need to make sur function doesnt have a return value
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
-        nvvm.set_cuda_kernel(kernel)
-
-        for block in kernel.blocks:
-            for i, inst in enumerate(block.instructions):
-                if isinstance(inst, ir.Ret):
-                    void_ret = ir.Ret(block, "ret void")
-                    print(f"Replacing {inst} with {void_ret} in {block.name}")
-                    block.instructions[i] = void_ret
-                    block.set_terminator(void_ret)
+        kernel_fixup(kernel)
 
         if not link:
             link = []
@@ -325,13 +308,20 @@ class _Kernel(serialize.ReduceMixin):
             excmem.memset(0, stream=stream)
 
         # Prepare arguments
-        retr = []                       # hold functors for writeback
 
-        kernelargs = []
+        # Leaks the pointer.
+        return_value = drvapi.cu_device_ptr()
+        driver.driver.cuMemAlloc(ctypes.byref(return_value), 8)
+
+        # Needs to be called via an async done
+        def cleanup_return():
+            driver.cuMemFree(return_value)
+
+        kernelargs = [return_value]
+        retr = []
+
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
-
-        kernelargs.insert(0, ctypes.c_void_p(0))
 
         if driver.USE_NV_BINDING:
             zero_stream = driver.binding.CUstream(0)
