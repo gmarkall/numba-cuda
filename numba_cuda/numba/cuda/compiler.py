@@ -1,7 +1,7 @@
 from llvmlite import ir
 from numba.core.typing.templates import ConcreteTemplate
-from numba.core import (types, typing, funcdesc, config, compiler, sigutils,
-                        utils)
+from numba.core import (cgutils, types, typing, funcdesc, config, compiler,
+                        sigutils, utils)
 from numba.core.compiler import (sanitize_compile_result_entries, CompilerBase,
                                  DefaultPassBuilder, Flags, Option,
                                  CompileResult)
@@ -257,14 +257,18 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
     return library
 
 
-def kernel_fixup(kernel):
+def kernel_fixup(kernel, debug=False):
     for block in kernel.blocks:
+        replacement_count = 0
         for i, inst in enumerate(block.instructions):
             if isinstance(inst, ir.Ret):
                 void_ret = ir.Ret(block, "ret void")
                 # print(f"Replacing {inst} with {void_ret} in {block.name}")
                 block.instructions[i] = void_ret
                 block.terminator = void_ret
+                replacement_count += 1
+        if replacement_count > 1:
+            raise RuntimeError(f"Replacement count: {replacement_count}")
 
     if isinstance(kernel.type, ir.PointerType):
         new_type = ir.PointerType(ir.FunctionType(ir.VoidType(),
@@ -278,6 +282,56 @@ def kernel_fixup(kernel):
     kernel.return_value = ir.ReturnValue(kernel, ir.VoidType())
 
     nvvm.set_cuda_kernel(kernel)
+
+    if not debug:
+        return
+
+    # Add exception state
+
+    def define_error_gv(postfix):
+        name = kernel.name + postfix
+        gv = cgutils.add_global_variable(kernel.module, ir.IntType(32),
+                                         name)
+        gv.initializer = ir.Constant(gv.type.pointee, None)
+        return gv
+
+    gv_exc = define_error_gv("__errcode__")
+    gv_tid = []
+    gv_ctaid = []
+    for i in 'xyz':
+        gv_tid.append(define_error_gv("__tid%s__" % i))
+        gv_ctaid.append(define_error_gv("__ctaid%s__" % i))
+
+    # End of execution of kernel
+
+    return
+
+    # Check error status
+    with cgutils.if_likely(builder, status.is_ok):
+        builder.ret_void()
+
+    with builder.if_then(builder.not_(status.is_python_exc)):
+        # User exception raised
+        old = ir.Constant(gv_exc.type.pointee, None)
+
+        # Use atomic cmpxchg to prevent rewriting the error status
+        # Only the first error is recorded
+
+        xchg = builder.cmpxchg(gv_exc, old, status.code,
+                               'monotonic', 'monotonic')
+        changed = builder.extract_value(xchg, 1)
+
+        # If the xchange is successful, save the thread ID.
+        sreg = nvvmutils.SRegBuilder(builder)
+        with builder.if_then(changed):
+            for dim, ptr, in zip("xyz", gv_tid):
+                val = sreg.tid(dim)
+                builder.store(val, ptr)
+
+            for dim, ptr, in zip("xyz", gv_ctaid):
+                val = sreg.ctaid(dim)
+                builder.store(val, ptr)
+
 
 
 @global_compiler_lock

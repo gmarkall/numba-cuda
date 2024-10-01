@@ -91,7 +91,7 @@ class _Kernel(serialize.ReduceMixin):
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
-        kernel_fixup(kernel)
+        kernel_fixup(kernel, self.debug)
 
         if not link:
             link = []
@@ -299,9 +299,9 @@ class _Kernel(serialize.ReduceMixin):
         # Prepare kernel
         cufunc = self._codelibrary.get_cufunc()
 
-        # if self.debug:
-        if False:
+        if self.debug:
             excname = cufunc.name + "__errcode__"
+            print(excname)
             excmem, excsz = cufunc.module.get_global_symbol(excname)
             assert excsz == ctypes.sizeof(ctypes.c_int)
             excval = ctypes.c_int()
@@ -339,7 +339,7 @@ class _Kernel(serialize.ReduceMixin):
                              kernelargs,
                              cooperative=self.cooperative)
 
-        if False: # self.debug:
+        if self.debug:
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
             if excval.value != 0:
                 # An error occurred
