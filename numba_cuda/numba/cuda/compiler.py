@@ -303,16 +303,18 @@ def kernel_fixup(kernel, debug):
         for to_remove in remove_list:
             block.instructions.remove(to_remove)
 
-    # Replace non-void return type with void return type
+    # Replace non-void return type with void return type and remove return
+    # value
 
     if isinstance(kernel.type, ir.PointerType):
         new_type = ir.PointerType(ir.FunctionType(ir.VoidType(),
-                                                  kernel.type.pointee.args))
+                                                  kernel.type.pointee.args[1:]))
     else:
-        new_type = ir.FunctionType(ir.VoidType(), kernel.type.args)
+        new_type = ir.FunctionType(ir.VoidType(), kernel.type.args[1:])
 
     kernel.type = new_type
     kernel.return_value = ir.ReturnValue(kernel, ir.VoidType())
+    kernel.args = kernel.args[1:]
 
     # Mark as a kernel for NVVM
 

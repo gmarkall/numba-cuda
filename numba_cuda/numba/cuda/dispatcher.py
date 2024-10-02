@@ -303,12 +303,13 @@ class _Kernel(serialize.ReduceMixin):
             excname = cufunc.name + "__errcode__"
             excmem, excsz = cufunc.module.get_global_symbol(excname)
             assert excsz == ctypes.sizeof(ctypes.c_int)
+            excval = ctypes.c_int()
             excmem.memset(0, stream=stream)
 
         # Prepare arguments
+        retr = []                       # hold functors for writeback
 
-        kernelargs = [ctypes.c_void_p(0)]
-        retr = []
+        kernelargs = []
 
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
@@ -330,7 +331,6 @@ class _Kernel(serialize.ReduceMixin):
                              cooperative=self.cooperative)
 
         if self.debug:
-            excval = ctypes.c_int()
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
             if excval.value != 0:
                 # An error occurred
