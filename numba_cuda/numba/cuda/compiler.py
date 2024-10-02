@@ -12,8 +12,10 @@ from numba.core.errors import NumbaInvalidConfigWarning
 from numba.core.typed_passes import (IRLegalization, NativeLowering,
                                      AnnotateTypes)
 from warnings import warn
+from numba.cuda import nvvmutils
 from numba.cuda.api import get_current_device
 from numba.cuda.cudadrv import nvvm
+from numba.cuda.descriptor import cuda_target
 from numba.cuda.target import CUDACABICallConv
 
 
@@ -257,24 +259,45 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
     return library
 
 
-def kernel_fixup(kernel, debug=False):
+def kernel_fixup(kernel, debug):
+    if debug:
+        exc_helper = add_exception_store_helper(kernel)
+    #print(kernel)
+    #replacement_count = 0
     for block in kernel.blocks:
-        replacement_count = 0
+        #breakpoint()
         for i, inst in enumerate(block.instructions):
             if isinstance(inst, ir.Ret):
-                void_ret = ir.Ret(block, "ret void")
-                # print(f"Replacing {inst} with {void_ret} in {block.name}")
-                block.instructions[i] = void_ret
-                block.terminator = void_ret
-                replacement_count += 1
-        if replacement_count > 1:
-            raise RuntimeError(f"Replacement count: {replacement_count}")
+                old_ret = block.instructions.pop()
+                block.terminator = None
+                #breakpoint()
+                builder = ir.IRBuilder(block)
+                if debug:
+                    status_code = old_ret.operands[0]
+                    builder.call(exc_helper, (status_code,))
+                builder.ret_void()
+                # Need to break out so we don't carry on modifying what we are
+                # iterating over
+                break
+                #void_ret = ir.Ret(block, "ret void")
+                #print(f"Replacing {inst} with {void_ret} in {block.name}")
+                #block.instructions[i] = void_ret
+                #block.terminator = void_ret
+                #replacement_count += 1
+    #if replacement_count > 1:
+    #    raise RuntimeError(f"Replacement count: {replacement_count}")
 
     if isinstance(kernel.type, ir.PointerType):
         new_type = ir.PointerType(ir.FunctionType(ir.VoidType(),
                                                   kernel.type.pointee.args))
+        #arglist = kernel.type.pointee.args
+        #arglist = tuple([ir.PointerType(ir.IntType(32))] + list(arglist[1:]))
+        #new_type = ir.PointerType(ir.FunctionType(ir.VoidType(), arglist))
     else:
         new_type = ir.FunctionType(ir.VoidType(), kernel.type.args)
+        #arglist = kernel.type.args
+        #arglist = tuple([ir.PointerType(ir.IntType(32))] + list(arglist[1:]))
+        #new_type = ir.FunctionType(ir.VoidType(), arglist)
 
     # print(f"Replacing kernel type:\n{kernel.type}\nwith:\n{new_type}")
 
@@ -283,10 +306,10 @@ def kernel_fixup(kernel, debug=False):
 
     nvvm.set_cuda_kernel(kernel)
 
-    if not debug:
-        return
+    #print(kernel.module)
 
-    # Add exception state
+
+def add_exception_store_helper(kernel):
 
     def define_error_gv(postfix):
         name = kernel.name + postfix
@@ -302,9 +325,16 @@ def kernel_fixup(kernel, debug=False):
         gv_tid.append(define_error_gv("__tid%s__" % i))
         gv_ctaid.append(define_error_gv("__ctaid%s__" % i))
 
-    # End of execution of kernel
+    helper_name = kernel.name + "__exc_helper__"
+    helper_type = ir.FunctionType(ir.VoidType(), (ir.IntType(32),))
+    helper_func = ir.Function(kernel.module, helper_type, helper_name)
 
-    return
+    block = helper_func.append_basic_block(name="entry")
+    builder = ir.IRBuilder(block)
+
+    status_code = helper_func.args[0]
+    call_conv = cuda_target.target_context.call_conv
+    status = call_conv._get_return_status(builder, status_code)
 
     # Check error status
     with cgutils.if_likely(builder, status.is_ok):
@@ -332,6 +362,9 @@ def kernel_fixup(kernel, debug=False):
                 val = sreg.ctaid(dim)
                 builder.store(val, ptr)
 
+    builder.ret_void()
+
+    return helper_func
 
 
 @global_compiler_lock
@@ -429,7 +462,7 @@ def compile(pyfunc, sig, debug=False, lineinfo=False, device=True,
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
         lib._entry_name = cres.fndesc.llvm_func_name
-        kernel_fixup(kernel)
+        kernel_fixup(kernel, debug)
 
     if lto:
         code = lib.get_ltoir(cc=cc)
