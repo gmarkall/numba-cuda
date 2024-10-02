@@ -373,47 +373,6 @@ class CUDACallConv(MinimalCallConv):
     pass
 
 
-class CUDANoexceptCallConv(MinimalCallConv):
-    def return_value(self, builder, retval):
-        retptr = builder.function.args[0]
-        assert retval.type == retptr.type.pointee, \
-            (str(retval.type), str(retptr.type.pointee))
-        builder.store(retval, retptr)
-
-        return builder.ret_void()
-
-    def get_function_type(self, restype, argtypes):
-        """
-        Get the LLVM IR Function type for *restype* and *argtypes*.
-        """
-        arginfo = self._get_arg_packer(argtypes)
-        argtypes = list(arginfo.argument_types)
-        resptr = self.get_return_type(restype)
-        fnty = ir.FunctionType(ir.VoidType(), [resptr] + argtypes)
-        return fnty
-
-    def return_user_exc(self, builder, exc, exc_args=None, loc=None,
-                        func_name=None):
-        builder.ret_void()
-
-    def call_function(self, builder, callee, resty, argtys, args):
-        """
-        Call the Numba-compiled *callee*.
-        """
-        retty = callee.args[0].type.pointee
-        retvaltmp = cgutils.alloca_once(builder, retty)
-        # initialize return value
-        builder.store(cgutils.get_null_value(retty), retvaltmp)
-
-        arginfo = self._get_arg_packer(argtys)
-        args = arginfo.as_arguments(builder, args)
-        realargs = [retvaltmp] + list(args)
-        builder.call(callee, realargs)
-        retval = builder.load(retvaltmp)
-        out = self.context.get_returned_value(builder, resty, retval)
-        return None, out
-
-
 class CUDACABICallConv(BaseCallConv):
     """
     Calling convention aimed at matching the CUDA C/C++ ABI. The implemented
