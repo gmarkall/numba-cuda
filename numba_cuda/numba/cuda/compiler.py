@@ -263,6 +263,15 @@ def kernel_fixup(kernel, debug):
     if debug:
         exc_helper = add_exception_store_helper(kernel)
 
+    # Pass 1 - replace:
+    #
+    #    ret <value>
+    #
+    # with:
+    #
+    #    exc_helper(<value>)
+    #    ret void
+
     for block in kernel.blocks:
         for i, inst in enumerate(block.instructions):
             if isinstance(inst, ir.Ret):
@@ -277,23 +286,42 @@ def kernel_fixup(kernel, debug):
                 # iterating over
                 break
 
+    # Pass 2: remove stores of null pointer to return value argument pointer
+
+    return_value = kernel.args[0]
+
+    for block in kernel.blocks:
+        remove_list = []
+
+        # Find all stores first
+        for inst in block.instructions:
+            if (isinstance(inst, ir.StoreInstr)
+                    and inst.operands[1] == return_value):
+                remove_list.append(inst)
+
+        # Remove all stores
+        for to_remove in remove_list:
+            block.instructions.remove(to_remove)
+
+    # Replace non-void return type with void return type
+
     if isinstance(kernel.type, ir.PointerType):
         new_type = ir.PointerType(ir.FunctionType(ir.VoidType(),
                                                   kernel.type.pointee.args))
     else:
         new_type = ir.FunctionType(ir.VoidType(), kernel.type.args)
 
-    # print(f"Replacing kernel type:\n{kernel.type}\nwith:\n{new_type}")
-
     kernel.type = new_type
     kernel.return_value = ir.ReturnValue(kernel, ir.VoidType())
 
-    nvvm.set_cuda_kernel(kernel)
+    # Mark as a kernel for NVVM
 
-    #print(kernel.module)
+    nvvm.set_cuda_kernel(kernel)
 
 
 def add_exception_store_helper(kernel):
+
+    # Create global variables for exception state
 
     def define_error_gv(postfix):
         name = kernel.name + postfix
@@ -309,12 +337,16 @@ def add_exception_store_helper(kernel):
         gv_tid.append(define_error_gv("__tid%s__" % i))
         gv_ctaid.append(define_error_gv("__ctaid%s__" % i))
 
+    # Create exception store helper function
+
     helper_name = kernel.name + "__exc_helper__"
     helper_type = ir.FunctionType(ir.VoidType(), (ir.IntType(32),))
     helper_func = ir.Function(kernel.module, helper_type, helper_name)
 
     block = helper_func.append_basic_block(name="entry")
     builder = ir.IRBuilder(block)
+
+    # Implement status check / exception store logic
 
     status_code = helper_func.args[0]
     call_conv = cuda_target.target_context.call_conv

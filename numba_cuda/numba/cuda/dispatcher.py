@@ -14,7 +14,7 @@ from numba.core.typing.typeof import Purpose, typeof
 from numba.cuda.api import get_current_device
 from numba.cuda.args import wrap_arg
 from numba.cuda.compiler import compile_cuda, CUDACompiler, kernel_fixup
-from numba.cuda.cudadrv import driver, drvapi
+from numba.cuda.cudadrv import driver
 from numba.cuda.cudadrv.devices import get_context
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.errors import (missing_launch_config_msg,
@@ -304,20 +304,11 @@ class _Kernel(serialize.ReduceMixin):
             print(excname)
             excmem, excsz = cufunc.module.get_global_symbol(excname)
             assert excsz == ctypes.sizeof(ctypes.c_int)
-            excval = ctypes.c_int()
             excmem.memset(0, stream=stream)
 
         # Prepare arguments
 
-        # Leaks the pointer.
-        return_value = drvapi.cu_device_ptr()
-        driver.driver.cuMemAlloc(ctypes.byref(return_value), 8)
-
-        # Needs to be called via an async done
-        def cleanup_return():
-            driver.cuMemFree(return_value)
-
-        kernelargs = [return_value]
+        kernelargs = [ctypes.c_void_p(0)]
         retr = []
 
         for t, v in zip(self.argument_types, args):
@@ -340,6 +331,7 @@ class _Kernel(serialize.ReduceMixin):
                              cooperative=self.cooperative)
 
         if self.debug:
+            excval = ctypes.c_int()
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
             if excval.value != 0:
                 # An error occurred
