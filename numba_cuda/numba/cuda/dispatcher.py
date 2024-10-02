@@ -310,7 +310,6 @@ class _Kernel(serialize.ReduceMixin):
         retr = []                       # hold functors for writeback
 
         kernelargs = []
-
         for t, v in zip(self.argument_types, args):
             self._prepare_args(t, v, stream, retr, kernelargs)
 
