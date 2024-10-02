@@ -262,15 +262,12 @@ def cabi_wrap_function(context, lib, fndesc, wrapper_function_name,
 def kernel_fixup(kernel, debug):
     if debug:
         exc_helper = add_exception_store_helper(kernel)
-    #print(kernel)
-    #replacement_count = 0
+
     for block in kernel.blocks:
-        #breakpoint()
         for i, inst in enumerate(block.instructions):
             if isinstance(inst, ir.Ret):
                 old_ret = block.instructions.pop()
                 block.terminator = None
-                #breakpoint()
                 builder = ir.IRBuilder(block)
                 if debug:
                     status_code = old_ret.operands[0]
@@ -279,25 +276,12 @@ def kernel_fixup(kernel, debug):
                 # Need to break out so we don't carry on modifying what we are
                 # iterating over
                 break
-                #void_ret = ir.Ret(block, "ret void")
-                #print(f"Replacing {inst} with {void_ret} in {block.name}")
-                #block.instructions[i] = void_ret
-                #block.terminator = void_ret
-                #replacement_count += 1
-    #if replacement_count > 1:
-    #    raise RuntimeError(f"Replacement count: {replacement_count}")
 
     if isinstance(kernel.type, ir.PointerType):
         new_type = ir.PointerType(ir.FunctionType(ir.VoidType(),
                                                   kernel.type.pointee.args))
-        #arglist = kernel.type.pointee.args
-        #arglist = tuple([ir.PointerType(ir.IntType(32))] + list(arglist[1:]))
-        #new_type = ir.PointerType(ir.FunctionType(ir.VoidType(), arglist))
     else:
         new_type = ir.FunctionType(ir.VoidType(), kernel.type.args)
-        #arglist = kernel.type.args
-        #arglist = tuple([ir.PointerType(ir.IntType(32))] + list(arglist[1:]))
-        #new_type = ir.FunctionType(ir.VoidType(), arglist)
 
     # print(f"Replacing kernel type:\n{kernel.type}\nwith:\n{new_type}")
 
