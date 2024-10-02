@@ -141,7 +141,6 @@ class CUDATargetContext(BaseContext):
     @cached_property
     def call_conv(self):
         return CUDACallConv(self)
-        #return CUDACABICallConv(self)
 
     def mangler(self, name, argtypes, *, abi_tags=(), uid=None):
         return itanium_mangler.mangle(name, argtypes, abi_tags=abi_tags,
