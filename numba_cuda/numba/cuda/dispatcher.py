@@ -301,7 +301,6 @@ class _Kernel(serialize.ReduceMixin):
 
         if self.debug:
             excname = cufunc.name + "__errcode__"
-            print(excname)
             excmem, excsz = cufunc.module.get_global_symbol(excname)
             assert excsz == ctypes.sizeof(ctypes.c_int)
             excmem.memset(0, stream=stream)
