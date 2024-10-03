@@ -277,13 +277,23 @@ def kernel_fixup(kernel, debug):
             if isinstance(inst, ir.Ret):
                 old_ret = block.instructions.pop()
                 block.terminator = None
+
+                # The original return's metadata will be set on the new
+                # instructions in order to preserve debug info
+                metadata = old_ret.metadata
+
                 builder = ir.IRBuilder(block)
                 if debug:
                     status_code = old_ret.operands[0]
-                    builder.call(exc_helper, (status_code,))
-                builder.ret_void()
+                    exc_helper_call = builder.call(exc_helper, (status_code,))
+                    exc_helper_call.metadata = metadata
+
+                new_ret = builder.ret_void()
+                new_ret.metadata = old_ret.metadata
+
                 # Need to break out so we don't carry on modifying what we are
-                # iterating over
+                # iterating over. There can only be one return in a block
+                # anyway.
                 break
 
     # Pass 2: remove stores of null pointer to return value argument pointer
@@ -319,6 +329,11 @@ def kernel_fixup(kernel, debug):
     # Mark as a kernel for NVVM
 
     nvvm.set_cuda_kernel(kernel)
+
+    if config.DUMP_LLVM:
+        print(f"LLVM DUMP: Post kernel fixup {kernel.name}".center(80, '-'))
+        print(kernel.module)
+        print('=' * 80)
 
 
 def add_exception_store_helper(kernel):
