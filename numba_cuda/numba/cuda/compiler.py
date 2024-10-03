@@ -28,6 +28,15 @@ def _nvvm_options_type(x):
         return x
 
 
+def _optional_int_type(x):
+    if x is None:
+        return None
+
+    else:
+        assert isinstance(x, int)
+        return x
+
+
 class CUDAFlags(Flags):
     nvvm_options = Option(
         type=_nvvm_options_type,
@@ -38,6 +47,11 @@ class CUDAFlags(Flags):
         type=tuple,
         default=None,
         doc="Compute Capability",
+    )
+    max_registers = Option(
+        type=_optional_int_type,
+        default=None,
+        doc="Max registers"
     )
 
 
@@ -113,7 +127,9 @@ class CreateLibrary(LoweringPass):
         codegen = state.targetctx.codegen()
         name = state.func_id.func_qualname
         nvvm_options = state.flags.nvvm_options
-        state.library = codegen.create_library(name, nvvm_options=nvvm_options)
+        max_registers = state.flags.max_registers
+        state.library = codegen.create_library(name, nvvm_options=nvvm_options,
+                                               max_registers=max_registers)
         # Enable object caching upfront so that the library can be serialized.
         state.library.enable_object_caching()
 
@@ -156,7 +172,7 @@ class CUDACompiler(CompilerBase):
 @global_compiler_lock
 def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
                  inline=False, fastmath=False, nvvm_options=None,
-                 cc=None):
+                 cc=None, max_registers=None):
     if cc is None:
         raise ValueError('Compute Capability must be supplied')
 
@@ -193,6 +209,7 @@ def compile_cuda(pyfunc, return_type, args, debug=False, lineinfo=False,
     if nvvm_options:
         flags.nvvm_options = nvvm_options
     flags.compute_capability = cc
+    flags.max_registers = max_registers
 
     # Run compilation pipeline
     from numba.core.target_extension import target_override

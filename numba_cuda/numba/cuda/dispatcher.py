@@ -86,7 +86,8 @@ class _Kernel(serialize.ReduceMixin):
                             inline=inline,
                             fastmath=fastmath,
                             nvvm_options=nvvm_options,
-                            cc=cc)
+                            cc=cc,
+                            max_registers=max_registers)
         tgt_ctx = cres.target_context
         lib = cres.library
         kernel = lib.get_function(cres.fndesc.llvm_func_name)
