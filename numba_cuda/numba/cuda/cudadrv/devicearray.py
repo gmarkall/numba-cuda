@@ -59,7 +59,7 @@ def require_cuda_ndarray(obj):
         raise ValueError('require an cuda ndarray object')
 
 
-class DeviceNDArrayBase(_devicearray.DeviceArray):
+class DeviceNDArrayBase(np.ndarray):
     """A on GPU NDArray representation
     """
     __cuda_memory__ = True
