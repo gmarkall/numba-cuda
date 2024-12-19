@@ -2515,6 +2515,10 @@ class CtypesFunction(Function):
             flag = enums.CU_FUNC_CACHE_PREFER_NONE
         driver.cuFuncSetCacheConfig(self.handle, flag)
 
+    def set_max_dynamic_shared_memory(self, nbytes):
+        attrib = enums.CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES
+        driver.cuFuncSetAttribute(self.handle, attrib, nbytes)
+
     def read_func_attr(self, attrid):
         retval = c_int()
         driver.cuFuncGetAttribute(byref(retval), attrid, self.handle)

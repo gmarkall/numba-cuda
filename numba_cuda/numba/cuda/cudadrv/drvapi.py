@@ -330,6 +330,11 @@ API_PROTOTYPES = {
     'cuFuncGetAttribute': (c_int,
                            POINTER(c_int), cu_function_attribute, cu_function),
 
+    # CUresult cuFuncSetAttribute (CUfunction hfunc, CUfunction_attribute
+    # attrib, int value)
+    'cuFuncSetAttribute': (c_int,
+                           cu_function, cu_function_attribute, c_int),
+
     # CUresult CUDAAPI cuOccupancyMaxActiveBlocksPerMultiprocessor(
     #                      int *numBlocks,
     #                      CUfunction func,
