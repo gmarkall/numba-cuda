@@ -164,7 +164,6 @@ class CUDABytecodeInterpreter(Interpreter):
         name = "$bool%s" % (inst.offset)
         gv_fn = numba_ir.Global("bool", bool, loc=self.loc)
         self.store(value=gv_fn, name=name)
-        print("name changed:")
 
         callres = numba_ir.Expr.call(self.get(name), (self.get(pred),), (),
                                      loc=self.loc)
