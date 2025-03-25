@@ -40,3 +40,4 @@ if config.ENABLE_CUDASIM:
 
     from numba.cuda.simulator import runtime as _runtime
     sys.modules['numba.cuda.runtime'] = _runtime
+    sys.modules['numba.cuda.runtime.nrt'] = _runtime.nrt
