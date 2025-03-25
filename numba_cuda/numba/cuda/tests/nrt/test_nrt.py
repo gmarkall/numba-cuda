@@ -8,7 +8,7 @@ from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 from numba.tests.support import run_in_subprocess, override_config
 
 from numba import cuda
-from numba.cuda.runtime.nrt import rtsys
+from numba.cuda.memory_management.nrt import rtsys
 
 
 class TestNrtBasic(CUDATestCase):
@@ -97,7 +97,7 @@ class TestNrtStatistics(CUDATestCase):
         # Checks that explicitly turning the stats on via the env var works.
         src = """if 1:
         from numba import cuda
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
         import numpy as np
 
         @cuda.jit
@@ -137,7 +137,7 @@ class TestNrtStatistics(CUDATestCase):
         src = """if 1:
         from numba import cuda
         import numpy as np
-        from numba.cuda.runtime import rtsys
+        from numba.cuda.memory_management import rtsys
 
         @cuda.jit
         def foo():

@@ -38,6 +38,6 @@ if config.ENABLE_CUDASIM:
     from . import compiler
     sys.modules['numba.cuda.compiler'] = compiler
 
-    from numba.cuda.simulator import runtime as _runtime
-    sys.modules['numba.cuda.runtime'] = _runtime
-    sys.modules['numba.cuda.runtime.nrt'] = _runtime.nrt
+    from numba.cuda.simulator import memory_management
+    sys.modules['numba.cuda.memory_management'] = memory_management
+    sys.modules['numba.cuda.memory_management.nrt'] = memory_management.nrt
