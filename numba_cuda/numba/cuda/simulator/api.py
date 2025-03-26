@@ -74,6 +74,10 @@ def list_devices():
     return gpus
 
 
+def get_current_device():
+    return gpus[0].device
+
+
 # Events
 
 class Event(object):
