@@ -189,6 +189,16 @@ if TEST_BIN_DIR:
         TEST_BIN_DIR, "test_device_functions.ltoir"
     )
 
+    TEST_FILES = (
+        (test_device_functions_a, cuda.Archive),
+        (test_device_functions_cubin, cuda.Cubin),
+        (test_device_functions_cu, cuda.CUSource),
+        (test_device_functions_fatbin, cuda.Fatbin),
+        (test_device_functions_o, cuda.Object),
+        (test_device_functions_ptx, cuda.PTXSource),
+        (test_device_functions_ltoir, cuda.LTOIR),
+    )
+
 
 class TestExtendingLinkage(CUDATestCase):
     def test_extension_adds_linkable_code(self):
@@ -197,19 +207,9 @@ class TestExtendingLinkage(CUDATestCase):
         if cuda_major_version < 12:
             self.skipTest("CUDA 12 required for linking in-memory data")
 
-        files = (
-            (test_device_functions_a, cuda.Archive),
-            (test_device_functions_cubin, cuda.Cubin),
-            (test_device_functions_cu, cuda.CUSource),
-            (test_device_functions_fatbin, cuda.Fatbin),
-            (test_device_functions_o, cuda.Object),
-            (test_device_functions_ptx, cuda.PTXSource),
-            (test_device_functions_ltoir, cuda.LTOIR),
-        )
-
         lto = config.CUDA_ENABLE_PYNVJITLINK
 
-        for path, ctor in files:
+        for path, ctor in TEST_FILES:
             if ctor == cuda.LTOIR and not lto:
                 # Don't try to test with LTOIR if LTO is not enabled
                 continue
@@ -247,6 +247,22 @@ class TestExtendingLinkage(CUDATestCase):
             y = np.ones(1, dtype=np.uint32) * 2
 
             use_external_add[1, 1](r, x, y)
+
+            np.testing.assert_equal(r[0], 3)
+
+            @cuda.jit(lto=lto)
+            def use_external_add_device(x, y):
+                return external_add(x, y)
+
+            @cuda.jit(lto=lto)
+            def use_external_add_kernel(r, x, y):
+                r[0] = use_external_add_device(x[0], y[0])
+
+            r = np.zeros(1, dtype=np.uint32)
+            x = np.ones(1, dtype=np.uint32)
+            y = np.ones(1, dtype=np.uint32) * 2
+
+            use_external_add_kernel[1, 1](r, x, y)
 
             np.testing.assert_equal(r[0], 3)
 
