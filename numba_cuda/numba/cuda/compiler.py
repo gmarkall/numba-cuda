@@ -790,9 +790,8 @@ def declare_device_function_template(name, restype, argtypes, link):
     sig = typing.signature(restype, *argtypes)
     extfn = ExternFunction(name, sig, link)
 
-    class device_function_template(ConcreteTemplate):
-        key = extfn
-        cases = [sig]
+    device_function_template = typing.make_concrete_template(name, extfn,
+                                                             [sig])
 
     fndesc = funcdesc.ExternalFunctionDescriptor(
         name=name, restype=restype, argtypes=argtypes
