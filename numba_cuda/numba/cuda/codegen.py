@@ -57,7 +57,7 @@ def disassemble_cubin_for_cfg(cubin):
     return run_nvdisasm(cubin, flags)
 
 
-class ExternalCodeLibrary(CodeLibrary):  # XXX: Need to serialize as well
+class ExternalCodeLibrary(CodeLibrary):
     def __init__(self, codegen, name):
         super().__init__(codegen, name)
         # Files to link with the generated PTX. These are linked using the
