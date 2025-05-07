@@ -57,6 +57,61 @@ def disassemble_cubin_for_cfg(cubin):
     return run_nvdisasm(cubin, flags)
 
 
+class ExternalCodeLibrary(CodeLibrary):  # XXX: Need to serialize as well
+    def __init__(self, codegen, name):
+        super().__init__(codegen, name)
+        # Files to link with the generated PTX. These are linked using the
+        # Driver API at link time.
+        self._linking_files = set()
+        # List of setup functions to the loaded module
+        # the order is determined by the order they are added to the codelib.
+        self._setup_functions = []
+        # List of teardown functions to the loaded module
+        # the order is determined by the order they are added to the codelib.
+        self._teardown_functions = []
+
+    @property
+    def modules(self):
+        return set()
+
+    def add_linking_file(self, path_or_obj):
+        if isinstance(path_or_obj, LinkableCode):
+            if path_or_obj.setup_callback:
+                self._setup_functions.append(path_or_obj.setup_callback)
+            if path_or_obj.teardown_callback:
+                self._teardown_functions.append(path_or_obj.teardown_callback)
+
+        self._linking_files.add(path_or_obj)
+
+    def add_ir_module(self, module):
+        raise NotImplementedError("Cannot add LLVM IR to external code")
+
+    def add_linking_library(self, library):
+        raise NotImplementedError("Cannot add libraries to external code")
+
+        library._ensure_finalized()
+
+        # We don't want to allow linking more libraries in after finalization
+        # because our linked libraries are modified by the finalization, and we
+        # won't be able to finalize again after adding new ones
+        self._raise_if_finalized()
+
+        self._linking_files.update(library._linking_files)
+
+    def finalize(self):
+        self._raise_if_finalized()
+        self._finalized = True
+
+    def get_asm_str(self):
+        raise NotImplementedError("No assembly for external code")
+
+    def get_llvm_str(self):
+        raise NotImplementedError("No LLVM IR for external code")
+
+    def get_function(self, name):
+        raise NotImplementedError("Cannot get function from external code")
+
+
 class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
     """
     The CUDACodeLibrary generates PTX, SASS, cubins for multiple different
@@ -298,6 +353,8 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
 
         self._linking_libraries.add(library)
         self._linking_files.update(library._linking_files)
+        self._setup_functions.extend(library._setup_functions)
+        self._teardown_functions.extend(library._teardown_functions)
 
     def add_linking_file(self, path_or_obj):
         if isinstance(path_or_obj, LinkableCode):
