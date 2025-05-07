@@ -779,35 +779,37 @@ def compile_ptx_for_current_device(
 
 
 def declare_device_function(name, restype, argtypes, link):
-    return declare_device_function_template(name, restype, argtypes, link).key
-
-
-def declare_device_function_template(name, restype, argtypes, link):
     from .descriptor import cuda_target
 
     typingctx = cuda_target.typing_context
     targetctx = cuda_target.target_context
     sig = typing.signature(restype, *argtypes)
-    extfn = ExternFunction(name, sig, link)
 
+    # extfn is the descriptor used to call the function from Python code, and
+    # is used as the key for typing and lowering.
+    extfn = ExternFunction(name, sig)
+
+    # Typing
     device_function_template = typing.make_concrete_template(name, extfn, [sig])
-
-    fndesc = funcdesc.ExternalFunctionDescriptor(
-        name=name, restype=restype, argtypes=argtypes
-    )
     typingctx.insert_user_function(extfn, device_function_template)
 
+    # Lowering
     lib = ExternalCodeLibrary(f"{name}_externals", targetctx.codegen())
     for file in link:
         lib.add_linking_file(file)
 
+    # ExternalFunctionDescriptor provides a lowering implementation for calling
+    # external functions
+    fndesc = funcdesc.ExternalFunctionDescriptor(name, restype, argtypes)
     targetctx.insert_user_function(extfn, fndesc, libs=(lib,))
 
     return device_function_template
 
 
 class ExternFunction:
-    def __init__(self, name, sig, link):
+    """A descriptor that can be used to call the external function from within
+    a Python kernel."""
+
+    def __init__(self, name, sig):
         self.name = name
         self.sig = sig
-        self.link = link
