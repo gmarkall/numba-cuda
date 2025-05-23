@@ -1,6 +1,5 @@
 import numpy as np
 
-from numba import vectorize, guvectorize
 from numba import cuda
 from numba.cuda.cudadrv import driver
 from numba.cuda.testing import unittest, ContextResettingTestCase, ForeignArray
@@ -81,41 +80,6 @@ class TestCudaArrayInterface(ContextResettingTestCase):
 
         np.testing.assert_array_equal(wrapped.copy_to_host(), h_arr + val)
         np.testing.assert_array_equal(d_arr.copy_to_host(), h_arr + val)
-
-    def test_ufunc_arg(self):
-        @vectorize(["f8(f8, f8)"], target="cuda")
-        def vadd(a, b):
-            return a + b
-
-        # Case 1: use custom array as argument
-        h_arr = np.random.random(10)
-        arr = ForeignArray(cuda.to_device(h_arr))
-        val = 6
-        out = vadd(arr, val)
-        np.testing.assert_array_equal(out.copy_to_host(), h_arr + val)
-
-        # Case 2: use custom array as return
-        out = ForeignArray(cuda.device_array(h_arr.shape))
-        returned = vadd(h_arr, val, out=out)
-        np.testing.assert_array_equal(returned.copy_to_host(), h_arr + val)
-
-    def test_gufunc_arg(self):
-        @guvectorize(["(f8, f8, f8[:])"], "(),()->()", target="cuda")
-        def vadd(inp, val, out):
-            out[0] = inp + val
-
-        # Case 1: use custom array as argument
-        h_arr = np.random.random(10)
-        arr = ForeignArray(cuda.to_device(h_arr))
-        val = np.float64(7)
-        out = vadd(arr, val)
-        np.testing.assert_array_equal(out.copy_to_host(), h_arr + val)
-
-        # Case 2: use custom array as return
-        out = ForeignArray(cuda.device_array(h_arr.shape))
-        returned = vadd(h_arr, val, out=out)
-        np.testing.assert_array_equal(returned.copy_to_host(), h_arr + val)
-        self.assertPointersEqual(returned, out._arr)
 
     def test_array_views(self):
         """Views created via array interface support:

@@ -6,7 +6,7 @@ from numba.cuda.testing import (
     skip_on_cudasim,
 )
 from numba.np import numpy_support
-from numba import cuda, float32, float64, int32, vectorize, void, int64
+from numba import cuda, float32, float64, int32, void, int64
 import math
 
 
@@ -458,32 +458,6 @@ class TestCudaMath(CUDATestCase):
         self.binary_template_uint64(math_atan2, np.arctan2)
 
     # ---------------------------------------------------------------------------
-    # test_math_erf
-
-    def test_math_erf(self):
-        @vectorize
-        def ufunc(x):
-            return math.erf(x)
-
-        self.unary_template_float32(math_erf, ufunc)
-        self.unary_template_float64(math_erf, ufunc)
-        self.unary_template_int64(math_erf, ufunc)
-        self.unary_template_uint64(math_erf, ufunc)
-
-    # ---------------------------------------------------------------------------
-    # test_math_erfc
-
-    def test_math_erfc(self):
-        @vectorize
-        def ufunc(x):
-            return math.erfc(x)
-
-        self.unary_template_float32(math_erfc, ufunc)
-        self.unary_template_float64(math_erfc, ufunc)
-        self.unary_template_int64(math_erfc, ufunc)
-        self.unary_template_uint64(math_erfc, ufunc)
-
-    # ---------------------------------------------------------------------------
     # test_math_exp
 
     def test_math_exp(self):
@@ -509,32 +483,6 @@ class TestCudaMath(CUDATestCase):
         self.unary_template_float64(math_fabs, np.fabs, start=-1)
         self.unary_template_int64(math_fabs, np.fabs, start=-1)
         self.unary_template_uint64(math_fabs, np.fabs, start=-1)
-
-    # ---------------------------------------------------------------------------
-    # test_math_gamma
-
-    def test_math_gamma(self):
-        @vectorize
-        def ufunc(x):
-            return math.gamma(x)
-
-        self.unary_template_float32(math_gamma, ufunc, start=0.1)
-        self.unary_template_float64(math_gamma, ufunc, start=0.1)
-        self.unary_template_int64(math_gamma, ufunc, start=1)
-        self.unary_template_uint64(math_gamma, ufunc, start=1)
-
-    # ---------------------------------------------------------------------------
-    # test_math_lgamma
-
-    def test_math_lgamma(self):
-        @vectorize
-        def ufunc(x):
-            return math.lgamma(x)
-
-        self.unary_template_float32(math_lgamma, ufunc, start=0.1)
-        self.unary_template_float64(math_lgamma, ufunc, start=0.1)
-        self.unary_template_int64(math_lgamma, ufunc, start=1)
-        self.unary_template_uint64(math_lgamma, ufunc, start=1)
 
     # ---------------------------------------------------------------------------
     # test_math_log

@@ -5,9 +5,9 @@ Test cases adapted from numba/tests/test_enums.py
 import numpy as np
 
 from numba import int16, int32
-from numba import cuda, vectorize, njit
+from numba import cuda, njit
 from numba.core import types
-from numba.cuda.testing import unittest, CUDATestCase, skip_on_cudasim
+from numba.cuda.testing import unittest, CUDATestCase
 from numba.tests.enum_usecases import (
     Color,
     Shape,
@@ -101,20 +101,6 @@ class EnumTest(CUDATestCase):
             cuda_f[1, 1](x, got)
             f(x, expected)
             self.assertEqual(expected, got)
-
-    @skip_on_cudasim("ufuncs are unsupported on simulator.")
-    def test_vectorize(self):
-        def f(x):
-            if x != RequestError.not_found:
-                return RequestError["internal_error"]
-            else:
-                return RequestError.dummy
-
-        cuda_func = vectorize("int64(int64)", target="cuda")(f)
-        arr = np.array([2, 404, 500, 404], dtype=np.int64)
-        expected = np.array([f(x) for x in arr], dtype=np.int64)
-        got = cuda_func(arr)
-        self.assertPreciseEqual(expected, got)
 
     def test_int_enum_no_conversion(self):
         # Ported from Numba PR #10047: "Fix IntEnumMember.can_convert_to() when

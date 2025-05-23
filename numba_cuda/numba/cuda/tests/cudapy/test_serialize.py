@@ -1,10 +1,8 @@
 import pickle
 import numpy as np
-from numba import cuda, vectorize
-from numba.core import types
+from numba import cuda
 from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
-from numba.np import numpy_support
 
 
 @skip_on_cudasim("pickling not supported in CUDASIM")
@@ -56,27 +54,6 @@ class TestPickle(CUDATestCase):
             arr[0] = inner(arr[0])
 
         self.check_call(foo)
-
-    def test_pickling_vectorize(self):
-        @vectorize(["intp(intp)", "float64(float64)"], target="cuda")
-        def cuda_vect(x):
-            return x * 2
-
-        # accommodate int representations in np.arange
-        npty = numpy_support.as_dtype(types.intp)
-        # get expected result
-        ary = np.arange(10, dtype=npty)
-        expected = cuda_vect(ary)
-        # first pickle
-        foo1 = pickle.loads(pickle.dumps(cuda_vect))
-        del cuda_vect
-        got1 = foo1(ary)
-        np.testing.assert_equal(expected, got1)
-        # second pickle
-        foo2 = pickle.loads(pickle.dumps(foo1))
-        del foo1
-        got2 = foo2(ary)
-        np.testing.assert_equal(expected, got2)
 
 
 if __name__ == "__main__":

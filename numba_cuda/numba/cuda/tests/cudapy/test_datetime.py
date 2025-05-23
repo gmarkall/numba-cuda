@@ -1,7 +1,6 @@
 import numpy as np
 
-from numba import cuda, vectorize, guvectorize
-from numba.np.numpy_support import from_dtype
+from numba import cuda
 from numba.cuda.testing import CUDATestCase, skip_on_cudasim
 import unittest
 
@@ -39,41 +38,6 @@ class TestCudaDateTime(CUDATestCase):
 
         self.assertEqual(list(where), [5])
         self.assertPreciseEqual(outdelta, arr1 - delta)
-
-    @skip_on_cudasim("ufunc API unsupported in the simulator")
-    def test_ufunc(self):
-        datetime_t = from_dtype(np.dtype("datetime64[D]"))
-
-        @vectorize([(datetime_t, datetime_t)], target="cuda")
-        def timediff(start, end):
-            return end - start
-
-        arr1 = np.arange("2005-02", "2006-02", dtype="datetime64[D]")
-        arr2 = arr1 + np.random.randint(0, 10000, arr1.size)
-
-        delta = timediff(arr1, arr2)
-
-        self.assertPreciseEqual(delta, arr2 - arr1)
-
-    @skip_on_cudasim("ufunc API unsupported in the simulator")
-    def test_gufunc(self):
-        datetime_t = from_dtype(np.dtype("datetime64[D]"))
-        timedelta_t = from_dtype(np.dtype("timedelta64[D]"))
-
-        @guvectorize(
-            [(datetime_t, datetime_t, timedelta_t[:])],
-            "(),()->()",
-            target="cuda",
-        )
-        def timediff(start, end, out):
-            out[0] = end - start
-
-        arr1 = np.arange("2005-02", "2006-02", dtype="datetime64[D]")
-        arr2 = arr1 + np.random.randint(0, 10000, arr1.size)
-
-        delta = timediff(arr1, arr2)
-
-        self.assertPreciseEqual(delta, arr2 - arr1)
 
     @skip_on_cudasim("no .copy_to_host() in the simulator")
     def test_datetime_view_as_int64(self):
