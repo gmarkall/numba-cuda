@@ -3,12 +3,6 @@ from numba.core import errors, types
 from numba.core.typing.npydecl import (
     parse_dtype,
     parse_shape,
-    register_number_classes,
-    register_numpy_ufunc,
-    trigonometric_functions,
-    comparison_functions,
-    math_operations,
-    bit_twiddling_functions,
 )
 from numba.core.typing.templates import (
     AttributeTemplate,
@@ -27,8 +21,6 @@ registry = Registry()
 register = registry.register
 register_attr = registry.register_attr
 register_global = registry.register_global
-
-register_number_classes(register_global)
 
 
 class Cuda_array_decl(CallableTemplate):
@@ -826,19 +818,3 @@ class CudaModuleTemplate(AttributeTemplate):
 
 
 register_global(cuda, types.Module(cuda))
-
-
-# NumPy
-
-for func in trigonometric_functions:
-    register_numpy_ufunc(func, register_global)
-
-for func in comparison_functions:
-    register_numpy_ufunc(func, register_global)
-
-for func in bit_twiddling_functions:
-    register_numpy_ufunc(func, register_global)
-
-for func in math_operations:
-    if func in ("log", "log2", "log10"):
-        register_numpy_ufunc(func, register_global)

@@ -135,7 +135,6 @@ class CUDATargetContext(BaseContext):
         from numba.cpython import cmathimpl
         from numba.misc import cffiimpl
         from numba.np import arrayobj  # noqa: F401
-        from numba.np import npdatetime  # noqa: F401
         from . import cudaimpl, printimpl, libdeviceimpl, mathimpl, vector_types
 
         # fix for #8940
