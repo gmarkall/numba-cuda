@@ -16,12 +16,15 @@ import numba
 from numba import _devicearray
 from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
-from numba.core import types, config
-from numba.np.unsafe.ndarray import to_fixed_tuple
-from numba.np.numpy_support import numpy_version
-from numba.np import numpy_support
+from numba.core import types, config, typing
 from numba.cuda.api_util import prepare_shape_strides_dtype
-from numba.core.errors import NumbaPerformanceWarning
+from numba.core.errors import (
+    NumbaPerformanceWarning,
+    RequireLiteralValue,
+    TypingError,
+)
+from numba.core.extending import intrinsic
+from numba.cpython.unsafe.tuple import tuple_setitem
 from warnings import warn
 
 try:
@@ -189,16 +192,18 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
 
-        broadcast = 0 in self.strides
-        if self.flags["C_CONTIGUOUS"] and not broadcast:
-            layout = "C"
-        elif self.flags["F_CONTIGUOUS"] and not broadcast:
-            layout = "F"
-        else:
-            layout = "A"
+        raise RuntimeError("Need to convert to holding Numba dtypes")
 
-        dtype = numpy_support.from_dtype(self.dtype)
-        return types.Array(dtype, self.ndim, layout)
+        # broadcast = 0 in self.strides
+        # if self.flags["C_CONTIGUOUS"] and not broadcast:
+        #     layout = "C"
+        # elif self.flags["F_CONTIGUOUS"] and not broadcast:
+        #     layout = "F"
+        # else:
+        #     layout = "A"
+
+        # dtype = numpy_support.from_dtype(self.dtype)
+        # return types.Array(dtype, self.ndim, layout)
 
     @property
     def device_ctypes_pointer(self):
@@ -237,9 +242,7 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
                 ary_core,
                 order="C" if self_core.flags["C_CONTIGUOUS"] else "F",
                 subok=True,
-                copy=(not ary_core.flags["WRITEABLE"])
-                if numpy_version < (2, 0)
-                else None,
+                copy=None,
             )
             check_array_compatibility(self_core, ary_core)
             _driver.host_to_device(
@@ -440,7 +443,8 @@ class DeviceRecord(DeviceNDArrayBase):
         Magic attribute expected by Numba to get the numba type that
         represents this object.
         """
-        return numpy_support.from_dtype(self.dtype)
+        raise RuntimeError("Need to convert to holding Numba dtypes")
+        # return numpy_support.from_dtype(self.dtype)
 
     @devices.require_context
     def __getitem__(self, item):
@@ -514,6 +518,47 @@ class DeviceRecord(DeviceNDArrayBase):
 
         if synchronous:
             stream.synchronize()
+
+
+@intrinsic
+def to_fixed_tuple(typingctx, array, length):
+    """Convert *array* into a tuple of *length*
+
+    Returns ``UniTuple(array.dtype, length)``
+
+    ** Warning **
+    - No boundchecking.
+      If *length* is longer than *array.size*, the behavior is undefined.
+    """
+    if not isinstance(length, types.IntegerLiteral):
+        raise RequireLiteralValue("*length* argument must be a constant")
+
+    if array.ndim != 1:
+        raise TypingError("Not supported on array.ndim={}".format(array.ndim))
+
+    # Determine types
+    tuple_size = int(length.literal_value)
+    tuple_type = types.UniTuple(dtype=array.dtype, count=tuple_size)
+    sig = tuple_type(array, length)
+
+    def codegen(context, builder, signature, args):
+        def impl(array, length, empty_tuple):
+            out = empty_tuple
+            for i in range(length):
+                out = tuple_setitem(out, i, array[i])
+            return out
+
+        inner_argtypes = [signature.args[0], types.intp, tuple_type]
+        inner_sig = typing.signature(tuple_type, *inner_argtypes)
+        ll_idx_type = context.get_value_type(types.intp)
+        # Allocate an empty tuple
+        empty_tuple = context.get_constant_undef(tuple_type)
+        inner_args = [args[0], ll_idx_type(tuple_size), empty_tuple]
+
+        res = context.compile_internal(builder, impl, inner_sig, inner_args)
+        return res
+
+    return sig, codegen
 
 
 @lru_cache
@@ -919,9 +964,7 @@ def auto_device(obj, stream=0, copy=True, user_explicit=False):
             # https://docs.scipy.org/doc/numpy-1.13.0/reference/arrays.interface.html
             # into this function (with no overhead -- copies -- for `obj`s
             # that are already `ndarray`s.
-            obj = np.array(
-                obj, copy=False if numpy_version < (2, 0) else None, subok=True
-            )
+            obj = np.array(obj, copy=None, subok=True)
             sentry_contiguous(obj)
             devobj = from_array_like(obj, stream=stream)
         if copy:

@@ -8,8 +8,8 @@ from numba import (
     uint32,
     int64,
     uint64,
-    from_dtype,
     jit,
+    types,
 )
 
 import numpy as np
@@ -41,7 +41,33 @@ import numpy as np
 xoroshiro128p_dtype = np.dtype(
     [("s0", np.uint64), ("s1", np.uint64)], align=True
 )
-xoroshiro128p_type = from_dtype(xoroshiro128p_dtype)
+
+# xoroshiro128p_type = from_dtype(xoroshiro128p_dtype)
+
+xoroshiro128p_type = types.Record(
+    [
+        (
+            "s0",
+            {
+                "type": types.uint64,
+                "offset": 0,
+                "alignment": None,
+                "title": None,
+            },
+        ),
+        (
+            "s1",
+            {
+                "type": types.uint64,
+                "offset": 8,
+                "alignment": None,
+                "title": None,
+            },
+        ),
+    ],
+    16,
+    True,
+)
 
 # When cudasim is enabled, Fake CUDA arrays are passed to some of the
 # @jit-decorated functions. This required fallback to object mode. With

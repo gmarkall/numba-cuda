@@ -4,7 +4,6 @@ stubs to allow tests to import correctly.
 """
 
 from contextlib import contextmanager
-from numba.np.numpy_support import numpy_version
 
 import numpy as np
 
@@ -169,7 +168,7 @@ class FakeCUDAArray(object):
                 ary_core,
                 order="C" if self_core.flags["C_CONTIGUOUS"] else "F",
                 subok=True,
-                copy=False if numpy_version < (2, 0) else None,
+                copy=None,
             )
             check_array_compatibility(self_core, ary_core)
         np.copyto(self_core._ary, ary_core)
@@ -307,9 +306,7 @@ def check_array_compatibility(ary1, ary2):
 
 
 def to_device(ary, stream=0, copy=True, to=None):
-    ary = np.array(
-        ary, copy=False if numpy_version < (2, 0) else None, subok=True
-    )
+    ary = np.array(ary, copy=None, subok=True)
     sentry_contiguous(ary)
     if to is None:
         buffer_dtype = np.int64 if ary.dtype.char in "Mm" else ary.dtype
@@ -407,9 +404,7 @@ def auto_device(ary, stream=0, copy=True):
         return ary, False
 
     if not isinstance(ary, np.void):
-        ary = np.array(
-            ary, copy=False if numpy_version < (2, 0) else None, subok=True
-        )
+        ary = np.array(ary, copy=None, subok=True)
     return to_device(ary, stream, copy), True
 
 
