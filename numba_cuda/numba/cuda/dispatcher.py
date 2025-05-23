@@ -575,9 +575,6 @@ class _Kernel(serialize.ReduceMixin):
             kernelargs.append(ctypes.c_double(val.real))
             kernelargs.append(ctypes.c_double(val.imag))
 
-        elif isinstance(ty, (types.NPDatetime, types.NPTimedelta)):
-            kernelargs.append(ctypes.c_int64(val.view(np.int64)))
-
         elif isinstance(ty, types.Record):
             devrec = wrap_arg(val).to_device(retr, stream)
             ptr = devrec.device_ctypes_pointer
