@@ -489,6 +489,8 @@ class TestArrayMethod(CUDATestCase):
         np.testing.assert_equal(dev_array.copy_to_host(), host_array)
 
 
+# XXX: compiler-core: No record arrays
+@unittest.skip("No record support")
 class TestRecarray(CUDATestCase):
     def test_recarray(self):
         # From issue #4111

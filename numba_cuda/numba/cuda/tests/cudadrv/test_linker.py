@@ -300,7 +300,7 @@ class TestLinker(CUDATestCase):
             self.assertIn("cuLaunchKernel", e.msg)
 
     def test_get_local_mem_per_thread(self):
-        sig = void(int32[::1], int32[::1], typeof(np.int32))
+        sig = void(int32[::1], int32[::1], int32)
         compiled = cuda.jit(sig)(simple_lmem)
         local_mem_size = compiled.get_local_mem_per_thread()
         calc_size = np.dtype(np.int32).itemsize * LMEM_SIZE
@@ -311,7 +311,7 @@ class TestLinker(CUDATestCase):
         compiled_specialized = compiled.specialize(
             np.zeros(LMEM_SIZE, dtype=np.int32),
             np.zeros(LMEM_SIZE, dtype=np.int32),
-            np.float64,
+            float64,
         )
         local_mem_size = compiled_specialized.get_local_mem_per_thread()
         calc_size = np.dtype(np.float64).itemsize * LMEM_SIZE

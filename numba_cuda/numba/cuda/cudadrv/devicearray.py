@@ -18,6 +18,7 @@ from numba.cuda.cudadrv import devices, dummyarray
 from numba.cuda.cudadrv import driver as _driver
 from numba.core import types, config, typing
 from numba.cuda.api_util import prepare_shape_strides_dtype
+from numba.cuda import numpy_support
 from numba.core.errors import (
     NumbaPerformanceWarning,
     RequireLiteralValue,
@@ -192,18 +193,16 @@ class DeviceNDArrayBase(_devicearray.DeviceArray):
         # of which will be 0, will not match those hardcoded in for 'C' or 'F'
         # layouts.
 
-        raise RuntimeError("Need to convert to holding Numba dtypes")
+        broadcast = 0 in self.strides
+        if self.flags["C_CONTIGUOUS"] and not broadcast:
+            layout = "C"
+        elif self.flags["F_CONTIGUOUS"] and not broadcast:
+            layout = "F"
+        else:
+            layout = "A"
 
-        # broadcast = 0 in self.strides
-        # if self.flags["C_CONTIGUOUS"] and not broadcast:
-        #     layout = "C"
-        # elif self.flags["F_CONTIGUOUS"] and not broadcast:
-        #     layout = "F"
-        # else:
-        #     layout = "A"
-
-        # dtype = numpy_support.from_dtype(self.dtype)
-        # return types.Array(dtype, self.ndim, layout)
+        dtype = numpy_support.from_dtype(self.dtype)
+        return types.Array(dtype, self.ndim, layout)
 
     @property
     def device_ctypes_pointer(self):
@@ -443,8 +442,7 @@ class DeviceRecord(DeviceNDArrayBase):
         Magic attribute expected by Numba to get the numba type that
         represents this object.
         """
-        raise RuntimeError("Need to convert to holding Numba dtypes")
-        # return numpy_support.from_dtype(self.dtype)
+        return numpy_support.from_dtype(self.dtype)
 
     @devices.require_context
     def __getitem__(self, item):

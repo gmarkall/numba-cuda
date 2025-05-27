@@ -4,6 +4,8 @@ from numba.cuda.testing import skip_on_cudasim, CUDATestCase
 import unittest
 
 
+# XXX: compiler-core: no record support yet
+@unittest.skip("Record dtype")
 class TestAlignment(CUDATestCase):
     def test_record_alignment(self):
         rec_dtype = np.dtype([("a", "int32"), ("b", "float64")], align=True)

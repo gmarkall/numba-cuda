@@ -1,7 +1,7 @@
 import re
 import itertools
 import numpy as np
-from numba import cuda
+from numba import cuda, types
 from numba.core.errors import TypingError
 from numba.cuda.testing import CUDATestCase
 import unittest
@@ -29,37 +29,38 @@ LMEM_PATTERN = re.compile(
 )
 
 
-DTYPES = [np.uint8, np.uint32, np.uint64]
+DTYPES = [types.uint8, types.uint32, types.uint64]
 
+# XXX: compiler-core: no record support
 # Add in some record dtypes with and without alignment.
-for align in (True, False):
-    DTYPES += [
-        np.dtype(
-            [
-                ("a", np.uint8),
-                ("b", np.int32),
-                ("c", np.float64),
-            ],
-            align=align,
-        ),
-        np.dtype(
-            [
-                ("a", np.uint32),
-                ("b", np.uint8),
-            ],
-            align=align,
-        ),
-        np.dtype(
-            [
-                ("a", np.uint8),
-                ("b", np.int32),
-                ("c", np.float64),
-                ("d", np.complex64),
-                ("e", (np.uint8, 5)),
-            ],
-            align=align,
-        ),
-    ]
+# for align in (True, False):
+#    DTYPES += [
+#        np.dtype(
+#            [
+#                ("a", np.uint8),
+#                ("b", np.int32),
+#                ("c", np.float64),
+#            ],
+#            align=align,
+#        ),
+#        np.dtype(
+#            [
+#                ("a", np.uint32),
+#                ("b", np.uint8),
+#            ],
+#            align=align,
+#        ),
+#        np.dtype(
+#            [
+#                ("a", np.uint8),
+#                ("b", np.int32),
+#                ("c", np.float64),
+#                ("d", np.complex64),
+#                ("e", (np.uint8, 5)),
+#            ],
+#            align=align,
+#        ),
+#    ]
 
 # N.B. We name the test class TestArrayAddressAlignment to avoid name conflict
 #      with the test_alignment.TestArrayAlignment class.

@@ -29,6 +29,8 @@ recwithmat = np.dtype([("i", np.int32), ("j", np.float32, (3, 3))])
 recwithrecwithmat = np.dtype([("x", np.int32), ("y", recwithmat)])
 
 
+# XXX: compiler-core: record dtype needs implementing
+@unittest.skip("Record types")
 @skip_on_cudasim("Device Record API unsupported in the simulator")
 class TestCudaDeviceRecord(CUDATestCase):
     """

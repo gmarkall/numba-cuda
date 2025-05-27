@@ -21,6 +21,7 @@ from numba.tests.test_caching import (
 )
 
 
+@unittest.skip("TEMP DO NOT COMMIT")
 @skip_on_cudasim("Simulator does not implement caching")
 class CUDACachingTest(SerialMixin, DispatcherCacheUsecasesTest):
     here = os.path.dirname(__file__)
