@@ -167,7 +167,7 @@ class TestArrayAddressAlignment(CUDATestCase):
 
     def test_invalid_aligments(self):
         shapes = (1, 50)
-        dtypes = (np.uint8, np.uint64)
+        dtypes = (types.uint8, types.uint64)
         invalid_alignment_values = (-1, 0, 3, 17, 33)
         invalid_alignment_types = ("1.0", "1", "foo", 1.0, 1.5, 3.2)
         alignments = invalid_alignment_values + invalid_alignment_types

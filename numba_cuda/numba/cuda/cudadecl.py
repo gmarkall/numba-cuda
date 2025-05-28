@@ -1,7 +1,6 @@
 import operator
 from numba.core import errors, types
 from numba.core.typing.npydecl import (
-    parse_dtype,
     parse_shape,
 )
 from numba.core.typing.templates import (
@@ -50,7 +49,11 @@ class Cuda_array_decl(CallableTemplate):
             #      is handled in the lowering.
 
             ndim = parse_shape(shape)
-            nb_dtype = parse_dtype(dtype)
+            if isinstance(dtype, types.NumberClass):
+                nb_dtype = dtype.dtype
+            else:
+                nb_dtype = dtype
+            # XXX: compiler-core: nb_dtype = parse_dtype(dtype)
             if nb_dtype is not None and ndim is not None:
                 return types.Array(dtype=nb_dtype, ndim=ndim, layout="C")
 

@@ -7,7 +7,6 @@ from llvmlite import ir
 import llvmlite.binding as ll
 
 from numba.core.imputils import Registry, lower_cast
-from numba.core.typing.npydecl import parse_dtype
 from numba.core.datamodel import models
 from numba.core import types, cgutils
 from .cudadrv import nvvm
@@ -144,7 +143,7 @@ def _try_extract_and_validate_alignment(sig: types.Tuple):
 @lower(cuda.shared.array, types.IntegerLiteral, types.Any, types.NoneType)
 def cuda_shared_array_integer(context, builder, sig, args):
     length = sig.args[0].literal_value
-    dtype = parse_dtype(sig.args[1])
+    dtype = sig.args[1]  # parse_dtype(sig.args[1])
     alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(
         context,
@@ -163,7 +162,7 @@ def cuda_shared_array_integer(context, builder, sig, args):
 @lower(cuda.shared.array, types.BaseTuple, types.Any, types.NoneType)
 def cuda_shared_array_tuple(context, builder, sig, args):
     shape = [s.literal_value for s in sig.args[0]]
-    dtype = parse_dtype(sig.args[1])
+    dtype = sig.args[1]  # parse_dtype(sig.args[1])
     alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(
         context,
@@ -182,7 +181,7 @@ def cuda_shared_array_tuple(context, builder, sig, args):
 @lower(cuda.local.array, types.IntegerLiteral, types.Any, types.NoneType)
 def cuda_local_array_integer(context, builder, sig, args):
     length = sig.args[0].literal_value
-    dtype = parse_dtype(sig.args[1])
+    dtype = sig.args[1]  # parse_dtype(sig.args[1])
     alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(
         context,
@@ -201,7 +200,7 @@ def cuda_local_array_integer(context, builder, sig, args):
 @lower(cuda.local.array, types.BaseTuple, types.Any, types.NoneType)
 def cuda_local_array_tuple(context, builder, sig, args):
     shape = [s.literal_value for s in sig.args[0]]
-    dtype = parse_dtype(sig.args[1])
+    dtype = sig.args[1]  # parse_dtype(sig.args[1])
     alignment = _try_extract_and_validate_alignment(sig)
     return _generic_array(
         context,
@@ -1051,6 +1050,9 @@ def _generic_array(
         or isinstance(data_model, models.StructModel)
         or dtype == types.float16
     )
+    if isinstance(dtype, types.NumberClass):
+        dtype = dtype.dtype
+
     if dtype not in types.number_domain and not other_supported_type:
         raise TypeError("unsupported type: %s" % dtype)
 
