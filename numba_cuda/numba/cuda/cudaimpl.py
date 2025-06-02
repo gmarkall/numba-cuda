@@ -13,6 +13,7 @@ from .cudadrv import nvvm
 from numba import cuda
 from numba.cuda import nvvmutils, stubs, errors
 from numba.cuda.types import dim3, CUDADispatcher
+from numba.core.typing.npydecl import parse_dtype
 
 registry = Registry()
 lower = registry.lower
@@ -1035,6 +1036,10 @@ def _generic_array(
     can_dynsized=False,
     alignment=None,
 ):
+    if isinstance(dtype, types.NumberClass):
+        dtype = dtype.dtype
+    else:
+        dtype = parse_dtype(dtype)
     elemcount = reduce(operator.mul, shape, 1)
 
     # Check for valid shape for this type of allocation.

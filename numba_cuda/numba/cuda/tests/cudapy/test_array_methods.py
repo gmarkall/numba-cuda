@@ -1,12 +1,12 @@
 import numpy as np
-from numba import cuda
+from numba import cuda, types
 from numba.cuda.testing import CUDATestCase
 import unittest
 
 
 def reinterpret_array_type(byte_arr, start, stop, output):
     # Tested with just one thread
-    val = byte_arr[start:stop].view(np.int32)[0]
+    val = byte_arr[start:stop].view(types.int32)[0]
     output[0] = val
 
 

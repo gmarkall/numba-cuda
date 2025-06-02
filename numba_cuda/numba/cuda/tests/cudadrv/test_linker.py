@@ -7,7 +7,7 @@ from numba.cuda.cudadrv.driver import CudaAPIError, Linker, LinkerError
 from numba.cuda.cudadrv.error import NvrtcError
 from numba.cuda import require_context
 from numba.tests.support import ignore_internal_warnings
-from numba import cuda, void, float64, int64, int32, typeof, float32
+from numba import cuda, void, float64, int64, int32, float32
 
 
 CONST1D = np.arange(10, dtype=np.float64)
@@ -271,7 +271,7 @@ class TestLinker(CUDATestCase):
         self.assertEqual(shared_mem_size, 0)
 
     def test_get_shared_mem_per_block(self):
-        sig = void(int32[::1], typeof(np.int32))
+        sig = void(int32[::1], int32)
         compiled = cuda.jit(sig)(simple_smem)
         shared_mem_size = compiled.get_shared_mem_per_block()
         self.assertEqual(shared_mem_size, 400)
@@ -279,7 +279,7 @@ class TestLinker(CUDATestCase):
     def test_get_shared_mem_per_specialized(self):
         compiled = cuda.jit(simple_smem)
         compiled_specialized = compiled.specialize(
-            np.zeros(100, dtype=np.int32), np.float64
+            np.zeros(100, dtype=np.int32), float64
         )
         shared_mem_size = compiled_specialized.get_shared_mem_per_block()
         self.assertEqual(shared_mem_size, 800)

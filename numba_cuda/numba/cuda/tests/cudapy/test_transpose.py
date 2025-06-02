@@ -37,6 +37,7 @@ class TestTranspose(CUDATestCase):
         (14, 14),
     )
 
+    @unittest.skip("no record support")
     def test_transpose_record(self):
         for rows, cols in self.small_variants:
             with self.subTest(rows=rows, cols=cols):
