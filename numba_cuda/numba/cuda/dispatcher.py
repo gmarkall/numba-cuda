@@ -461,15 +461,34 @@ class _Kernel(serialize.ReduceMixin):
         stream_handle = stream and stream.handle or zero_stream
 
         # Invoke kernel
-        driver.launch_kernel(
-            cufunc.handle,
-            *griddim,
-            *blockdim,
-            sharedmem,
-            stream_handle,
-            kernelargs,
-            cooperative=self.cooperative,
-        )
+        try:
+            driver.launch_kernel(
+                cufunc.handle,
+                *griddim,
+                *blockdim,
+                sharedmem,
+                stream_handle,
+                kernelargs,
+                cooperative=self.cooperative,
+            )
+        except driver.CudaAPIError as e:
+            if sys.version_info[:2] >= (3, 11):
+                e.add_note(f"Kernel: {self.fndesc.qualname}")
+                e.add_note(f"Launch configuration: ({griddim}, {blockdim})")
+                e.add_note(f"Launch bounds: {self.launch_bounds}")
+                e.add_note(
+                    f"Max threads per block: {self.max_threads_per_block}"
+                )
+                e.add_note(f"Cooperative launch: {self.cooperative}")
+                if self.cooperative:
+                    max_blocks = self.max_cooperative_grid_blocks(
+                        blockdim, dynsmemsize=sharedmem
+                    )
+                    e.add_note(
+                        "Max cooperative grid blocks for current block "
+                        f"dim and shared memory size: {max_blocks}"
+                    )
+            raise
 
         if self.debug:
             driver.device_to_host(ctypes.addressof(excval), excmem, excsz)
