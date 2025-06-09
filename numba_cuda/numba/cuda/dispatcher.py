@@ -759,6 +759,8 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
         # argument types
         self.specializations = {}
 
+        self.device_overloads = {}
+
     @property
     def _numba_type_(self):
         return cuda_types.CUDADispatcher(self)
@@ -1026,6 +1028,20 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
 
         return call_template, pysig, args, kws
 
+    @property
+    def device_signatures(self):
+        return [cres.signature for cres in self.device_overloads.values()]
+
+    def disable_compile(self, val=True):
+        """Disable the compilation of new signatures at call time."""
+        # If disabling compilation there must be at least one signature
+        assert (
+            (not val)
+            or (len(self.signatures)) > 0
+            or (len(self.device_signatures) > 0)
+        )
+        self._can_compile = not val
+
     def compile_device(self, args, return_type=None):
         """Compile the device function for the given argument types.
 
@@ -1034,7 +1050,7 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
 
         Returns the `CompileResult`.
         """
-        if args not in self.overloads:
+        if args not in self.device_overloads:
             with self._compiling_counter:
                 debug = self.targetoptions.get("debug")
                 lineinfo = self.targetoptions.get("lineinfo")
@@ -1061,13 +1077,13 @@ class CUDADispatcher(Dispatcher, serialize.ReduceMixin):
                     nvvm_options=nvvm_options,
                     cc=cc,
                 )
-                self.overloads[args] = cres
+                self.device_overloads[args] = cres
 
                 cres.target_context.insert_user_function(
                     cres.entry_point, cres.fndesc, [cres.library]
                 )
         else:
-            cres = self.overloads[args]
+            cres = self.device_overloads[args]
 
         return cres
 
