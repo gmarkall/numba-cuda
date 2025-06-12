@@ -208,7 +208,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ptxes:
             return ptxes
 
-        arch = nvvm.get_arch_option(*cc)
+        arch = nvrtc.get_arch_option(*cc)
         options = self._nvvm_options.copy()
         options["arch"] = arch
 
@@ -237,7 +237,7 @@ class CUDACodeLibrary(serialize.ReduceMixin, CodeLibrary):
         if ltoir is not None:
             return ltoir
 
-        arch = nvvm.get_arch_option(*cc)
+        arch = nvrtc.get_arch_option(*cc)
         options = self._nvvm_options.copy()
         options["arch"] = arch
         options["gen-lto"] = None

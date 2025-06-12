@@ -438,3 +438,43 @@ def compile(src, name, cc, ltoir=False):
     else:
         ptx = nvrtc.get_ptx(program)
         return ptx, log
+
+
+def find_closest_arch(mycc):
+    """
+    Given a compute capability, return the closest compute capability supported
+    by the CUDA toolkit.
+
+    :param mycc: Compute capability as a tuple ``(MAJOR, MINOR)``
+    :return: Closest supported CC as a tuple ``(MAJOR, MINOR)``
+    """
+    supported_ccs = NVRTC().get_supported_archs()
+
+    for i, cc in enumerate(supported_ccs):
+        if cc == mycc:
+            # Matches
+            return cc
+        elif cc > mycc:
+            # Exceeded
+            if i == 0:
+                # CC lower than supported
+                msg = (
+                    "GPU compute capability %d.%d is not supported"
+                    "(requires >=%d.%d)" % (mycc + cc)
+                )
+                raise NvvmSupportError(msg)
+            else:
+                # return the previous CC
+                return supported_ccs[i - 1]
+
+    # CC higher than supported
+    return supported_ccs[-1]  # Choose the highest
+
+
+def get_arch_option(major, minor):
+    """Matches with the closest architecture option"""
+    if config.FORCE_CUDA_CC:
+        arch = config.FORCE_CUDA_CC
+    else:
+        arch = find_closest_arch((major, minor))
+    return "compute_%d%d" % arch
