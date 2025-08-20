@@ -8,7 +8,6 @@ import textwrap
 from numba.core import errors, ir, config
 from numba.core.errors import (
     NotDefinedError,
-    UnsupportedBytecodeError,
     error_extras,
 )
 from numba.cuda.core import ir_utils
@@ -16,11 +15,16 @@ from numba.core.utils import (
     PYVERSION,
     BINOPS_TO_OPERATORS,
     INPLACE_BINOPS_TO_OPERATORS,
-    _lazy_pformat,
 )
+from numba.cuda.utils import _lazy_pformat
 from numba.core.byteflow import Flow, AdaptDFA, AdaptCFA, BlockKind
 from numba.core.unsafe import eh
 from numba.cpython.unsafe.tuple import unpack_single_tuple
+
+
+class UnsupportedBytecodeError(Exception):
+    def __init__(self, msg, loc=None):
+        super().__init__(f"{msg}. Raised from {loc}")
 
 
 if PYVERSION in ((3, 12), (3, 13)):
