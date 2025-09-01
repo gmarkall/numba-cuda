@@ -525,7 +525,7 @@ class JITCUDACodegen(Codegen):
     def _create_empty_module(self, name):
         ir_module = ir.Module(name)
         ir_module.triple = CUDA_TRIPLE
-        ir_module.data_layout = nvvm.NVVM().data_layout
+        ir_module.data_layout = nvvm.data_layout
         nvvm.add_ir_version(ir_module)
         return ir_module
 

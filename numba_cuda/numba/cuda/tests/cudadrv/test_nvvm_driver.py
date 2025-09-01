@@ -6,7 +6,7 @@ import warnings
 from llvmlite import ir
 from numba.cuda.cudadrv import nvrtc, nvvm, runtime
 from numba.cuda.testing import unittest
-from numba.cuda.cudadrv.nvvm import LibDevice, NvvmError, NVVM
+from numba.cuda.cudadrv.nvvm import data_layout, LibDevice, NvvmError, NVVM
 from numba.cuda.testing import skip_on_cudasim
 
 
@@ -14,7 +14,6 @@ from numba.cuda.testing import skip_on_cudasim
 class TestNvvmDriver(unittest.TestCase):
     def get_nvvmir(self):
         versions = NVVM().get_ir_version()
-        data_layout = NVVM().data_layout
         return nvvmir_generic.format(data_layout=data_layout, v=versions)
 
     def test_nvvm_compile_simple(self):
@@ -53,7 +52,7 @@ class TestNvvmDriver(unittest.TestCase):
         bldr.ret_void()
         nvvm.set_cuda_kernel(kernel)
 
-        m.data_layout = NVVM().data_layout
+        m.data_layout = data_layout
         ptx = nvvm.compile_ir(str(m)).decode("utf8")
         self.assertTrue("mycudakernel" in ptx)
         self.assertTrue(".address_size 64" in ptx)
@@ -62,7 +61,7 @@ class TestNvvmDriver(unittest.TestCase):
         # Construct a module
         m = ir.Module("test_used_list")
         m.triple = "nvptx64-nvidia-cuda"
-        m.data_layout = NVVM().data_layout
+        m.data_layout = data_layout
         nvvm.add_ir_version(m)
 
         # Add a function and mark it as a kernel
@@ -92,7 +91,7 @@ class TestNvvmDriver(unittest.TestCase):
             self.skipTest("Bad triple doesn't fail verify on CUDA >= 12.5")
         m = ir.Module("test_bad_ir")
         m.triple = "unknown-unknown-unknown"
-        m.data_layout = NVVM().data_layout
+        m.data_layout = data_layout
         nvvm.add_ir_version(m)
         with self.assertRaisesRegex(NvvmError, "Invalid target triple"):
             nvvm.compile_ir(str(m))
@@ -115,7 +114,7 @@ class TestNvvmDriver(unittest.TestCase):
     def test_nvvm_warning(self):
         m = ir.Module("test_nvvm_warning")
         m.triple = "nvptx64-nvidia-cuda"
-        m.data_layout = NVVM().data_layout
+        m.data_layout = data_layout
         nvvm.add_ir_version(m)
 
         fty = ir.FunctionType(ir.VoidType(), [])

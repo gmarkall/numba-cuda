@@ -190,7 +190,7 @@ class CUDATargetContext(BaseContext):
     @property
     def target_data(self):
         if self._target_data is None:
-            self._target_data = ll.create_target_data(nvvm.NVVM().data_layout)
+            self._target_data = ll.create_target_data(nvvm.data_layout)
         return self._target_data
 
     @cached_property

@@ -948,7 +948,7 @@ def _generic_array(
             gvmem, ir.PointerType(ir.IntType(8)), "generic"
         )
 
-    targetdata = ll.create_target_data(nvvm.NVVM().data_layout)
+    targetdata = ll.create_target_data(nvvm.data_layout)
     lldtype = context.get_data_type(dtype)
     itemsize = lldtype.get_abi_size(targetdata)
 
