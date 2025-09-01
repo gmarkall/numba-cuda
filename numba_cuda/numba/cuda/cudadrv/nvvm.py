@@ -15,6 +15,7 @@ import threading
 
 from llvmlite import ir
 
+from numba import config
 from .error import NvvmError, NvvmSupportError, NvvmWarning
 from .libs import get_libdevice, open_libdevice, open_cudalib
 from numba.cuda import cgutils
@@ -148,6 +149,10 @@ class NVVM(object):
 
     def __new__(cls):
         with _nvvm_lock:
+            if config.CUDA_USE_NVIDIA_BINDING:
+                raise RuntimeError(
+                    "NVVM objects should not be used with cuda-python bindings"
+                )
             if cls.__INSTANCE is None:
                 cls.__INSTANCE = inst = object.__new__(cls)
                 try:
@@ -226,7 +231,8 @@ class CompilationUnit(object):
     """
 
     def __init__(self, options):
-        self.driver = NVVM()
+        if not config.CUDA_USE_NVIDIA_BINDING:
+            self.driver = NVVM()
         self._handle = nvvm_program()
         err = self.driver.nvvmCreateProgram(byref(self._handle))
         self.driver.check_error(err, "Failed to create CU")
