@@ -53,14 +53,14 @@ class TestDispatcherPickling(TestCase):
             check_result(new_func)
 
     def test_call_with_sig(self):
-        from .serialize_usecases import add_with_sig
+        from numba.cuda.tests.core.serialize_usecases import add_with_sig
 
         self.run_with_protocols(self.check_call, add_with_sig, 5, (1, 4))
         # Compilation has been disabled => float inputs will be coerced to int
         self.run_with_protocols(self.check_call, add_with_sig, 5, (1.2, 4.2))
 
     def test_call_without_sig(self):
-        from .serialize_usecases import add_without_sig
+        from numba.cuda.tests.core.serialize_usecases import add_without_sig
 
         self.run_with_protocols(self.check_call, add_without_sig, 5, (1, 4))
         self.run_with_protocols(
@@ -72,7 +72,7 @@ class TestDispatcherPickling(TestCase):
         )
 
     def test_call_nopython(self):
-        from .serialize_usecases import add_nopython
+        from numba.cuda.tests.core.serialize_usecases import add_nopython
 
         self.run_with_protocols(self.check_call, add_nopython, 5.5, (1.2, 4.3))
         # Object mode is disabled
@@ -81,7 +81,7 @@ class TestDispatcherPickling(TestCase):
         )
 
     def test_call_nopython_fail(self):
-        from .serialize_usecases import add_nopython_fail
+        from numba.cuda.tests.core.serialize_usecases import add_nopython_fail
 
         # Compilation fails
         self.run_with_protocols(
@@ -89,20 +89,22 @@ class TestDispatcherPickling(TestCase):
         )
 
     def test_call_objmode_with_global(self):
-        from .serialize_usecases import get_global_objmode
+        from numba.cuda.tests.core.serialize_usecases import get_global_objmode
 
         self.run_with_protocols(
             self.check_call, get_global_objmode, 7.5, (2.5,)
         )
 
     def test_call_closure(self):
-        from .serialize_usecases import closure
+        from numba.cuda.tests.core.serialize_usecases import closure
 
         inner = closure(1)
         self.run_with_protocols(self.check_call, inner, 6, (2, 3))
 
     def check_call_closure_with_globals(self, **jit_args):
-        from .serialize_usecases import closure_with_globals
+        from numba.cuda.tests.core.serialize_usecases import (
+            closure_with_globals,
+        )
 
         inner = closure_with_globals(3.0, **jit_args)
         self.run_with_protocols(self.check_call, inner, 7.0, (4.0,))
@@ -114,31 +116,35 @@ class TestDispatcherPickling(TestCase):
         self.check_call_closure_with_globals(forceobj=True)
 
     def test_call_closure_calling_other_function(self):
-        from .serialize_usecases import closure_calling_other_function
+        from numba.cuda.tests.core.serialize_usecases import (
+            closure_calling_other_function,
+        )
 
         inner = closure_calling_other_function(3.0)
         self.run_with_protocols(self.check_call, inner, 11.0, (4.0, 6.0))
 
     def test_call_closure_calling_other_closure(self):
-        from .serialize_usecases import closure_calling_other_closure
+        from numba.cuda.tests.core.serialize_usecases import (
+            closure_calling_other_closure,
+        )
 
         inner = closure_calling_other_closure(3.0)
         self.run_with_protocols(self.check_call, inner, 8.0, (4.0,))
 
     def test_call_dyn_func(self):
-        from .serialize_usecases import dyn_func
+        from numba.cuda.tests.core.serialize_usecases import dyn_func
 
         # Check serializing a dynamically-created function
         self.run_with_protocols(self.check_call, dyn_func, 36, (6,))
 
     def test_call_dyn_func_objmode(self):
-        from .serialize_usecases import dyn_func_objmode
+        from numba.cuda.tests.core.serialize_usecases import dyn_func_objmode
 
         # Same with an object mode function
         self.run_with_protocols(self.check_call, dyn_func_objmode, 36, (6,))
 
     def test_renamed_module(self):
-        from .serialize_usecases import get_renamed_module
+        from numba.cuda.tests.core.serialize_usecases import get_renamed_module
 
         # Issue #1559: using a renamed module (e.g. `import numpy as np`)
         # should not fail serializing
@@ -152,7 +158,9 @@ class TestDispatcherPickling(TestCase):
         Check that reconstructing doesn't depend on resources already
         instantiated in the original process.
         """
-        from .serialize_usecases import closure_calling_other_closure
+        from numba.cuda.tests.core.serialize_usecases import (
+            closure_calling_other_closure,
+        )
 
         func = closure_calling_other_closure(3.0)
         pickled = pickle.dumps(func)
@@ -173,7 +181,7 @@ class TestDispatcherPickling(TestCase):
 
         Note that "same function" is intentionally under-specified.
         """
-        from .serialize_usecases import closure
+        from numba.cuda.tests.core.serialize_usecases import closure
 
         func = closure(5)
         pickled = pickle.dumps(func)
