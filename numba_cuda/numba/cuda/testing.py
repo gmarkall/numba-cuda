@@ -4,7 +4,6 @@
 import os
 import platform
 import shutil
-import pytest
 from datetime import datetime
 from numba.cuda.utils import PYVERSION
 from numba.cuda.cuda_paths import get_conda_ctk
@@ -28,7 +27,6 @@ numba_cuda_dir = Path(__file__).parent
 test_data_dir = numba_cuda_dir / "tests" / "data"
 
 
-@pytest.mark.usefixtures("initialize_from_pytest_config")
 class CUDATestCase(TestCase):
     """
     For tests that use a CUDA device. Test methods in a CUDATestCase must not
