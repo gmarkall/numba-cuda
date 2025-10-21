@@ -13,7 +13,9 @@ from multiprocessing import get_context
 import numba
 from numba.core.errors import TypingError
 from numba.cuda.tests.support import TestCase
-from numba.cuda.core.target_extension import resolve_dispatcher_from_str
+
+# FIXME: This needs to be conditional on Numba being importable
+from numba.core.target_extension import resolve_dispatcher_from_str
 from numba.cuda.cloudpickle import dumps, loads
 
 

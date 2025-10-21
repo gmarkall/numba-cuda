@@ -291,9 +291,11 @@ class BaseContext(object):
         templates = list(self._get_attribute_templates(typ))
 
         # get the order in which to try templates
-        from numba.cuda.core.target_extension import get_local_target
+        # from numba.cuda.core.target_extension import get_local_target
+        from numba.cuda.descriptor import cuda_target
 
-        target_hw = get_local_target(self)
+        # target_hw = get_local_target(self)
+        target_hw = cuda_target
         order = order_by_target_specificity(target_hw, templates, fnkey=attr)
 
         for template in order:

@@ -1239,12 +1239,15 @@ class Lower(BaseLower):
             )
         tname = expr.target
         if tname is not None:
-            from numba.cuda.core.target_extension import (
-                resolve_dispatcher_from_str,
-            )
+            # from numba.cuda.core.target_extension import (
+            #    resolve_dispatcher_from_str,
+            # )
 
-            disp = resolve_dispatcher_from_str(tname)
-            hw_ctx = disp.targetdescr.target_context
+            # disp = resolve_dispatcher_from_str(tname)
+            # hw_ctx = disp.targetdescr.target_context
+            from numba.cuda.descriptor import cuda_target
+
+            hw_ctx = cuda_target.target_context
             impl = hw_ctx.get_function(fnty, signature)
         else:
             impl = self.context.get_function(fnty, signature)

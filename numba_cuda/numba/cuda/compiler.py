@@ -742,19 +742,19 @@ def compile_cuda(
     flags.lto = lto
 
     # Run compilation pipeline
-    from numba.cuda.core.target_extension import target_override
+    # from numba.cuda.core.target_extension import target_override
 
-    with target_override("cuda"):
-        cres = compile_extra(
-            typingctx=typingctx,
-            targetctx=targetctx,
-            func=pyfunc,
-            args=args,
-            return_type=return_type,
-            flags=flags,
-            locals={},
-            pipeline_class=CUDACompiler,
-        )
+    # with target_override("cuda"):
+    cres = compile_extra(
+        typingctx=typingctx,
+        targetctx=targetctx,
+        func=pyfunc,
+        args=args,
+        return_type=return_type,
+        flags=flags,
+        locals={},
+        pipeline_class=CUDACompiler,
+    )
 
     library = cres.library
     library.finalize()

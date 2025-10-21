@@ -767,11 +767,13 @@ class _OverloadFunctionTemplate(AbstractTemplate):
     def _get_jit_decorator(self):
         """Gets a jit decorator suitable for the current target"""
 
-        from numba.cuda.core.target_extension import (
-            target_registry,
-            get_local_target,
-            jit_registry,
-        )
+        # from numba.cuda.core.target_extension import (
+        #    target_registry,
+        #    get_local_target,
+        #    jit_registry,
+        # )
+        # from numba.cuda.descriptor import cuda_target
+        from numba.cuda.decorators import jit as cuda_jit
 
         jitter_str = self.metadata.get("target", "generic")
         jitter = jit_registry.get(jitter_str, None)
@@ -779,19 +781,21 @@ class _OverloadFunctionTemplate(AbstractTemplate):
         if jitter is None:
             # No JIT known for target string, see if something is
             # registered for the string and report if not.
-            target_class = target_registry.get(jitter_str, None)
-            if target_class is None:
-                msg = ("Unknown target '{}', has it been ", "registered?")
-                raise ValueError(msg.format(jitter_str))
+            # target_class = target_registry.get(jitter_str, None)
+            # if target_class is None:
+            #    msg = ("Unknown target '{}', has it been ", "registered?")
+            #    raise ValueError(msg.format(jitter_str))
 
-            target_hw = get_local_target(self.context)
+            # target_hw = get_local_target(self.context)
+            # target_hw = cuda_target
 
             # check that the requested target is in the hierarchy for the
             # current frame's target.
-            if not issubclass(target_hw, target_class):
-                msg = "No overloads exist for the requested target: {}."
+            # if not issubclass(target_hw, target_class):
+            #    msg = "No overloads exist for the requested target: {}."
 
-            jitter = jit_registry[target_hw]
+            # jitter = jit_registry[target_hw]
+            jitter = cuda_jit
 
         if jitter is None:
             raise ValueError("Cannot find a suitable jit decorator")
