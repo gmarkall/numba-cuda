@@ -587,6 +587,8 @@ class BaseContext(object):
         """
         assert sig is not None
         sig = sig.as_function()
+
+        breakpoint()
         if isinstance(fn, types.Callable):
             key = fn.get_impl_key(sig)
             overloads = self._defns[key]
@@ -611,6 +613,8 @@ class BaseContext(object):
         if _firstcall:
             self.refresh()
             return self.get_function(fn, sig, _firstcall=False)
+
+
 
         raise NotImplementedError(
             "No definition for lowering %s%s" % (key, sig)

@@ -4,6 +4,7 @@
 import functools
 from .manager import DataModelManager
 
+from numba.core.datamodel.registry import default_manager as numba_default_manager
 
 def register(dmm, typecls):
     """Used as decorator to simplify datamodel registration.
@@ -12,6 +13,8 @@ def register(dmm, typecls):
 
     def wraps(fn):
         dmm.register(typecls, fn)
+        # Weird spelling due to issubclass check in register()
+        numba_default_manager._handlers[typecls] = fn
         return fn
 
     return wraps

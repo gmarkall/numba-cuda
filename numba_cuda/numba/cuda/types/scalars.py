@@ -278,3 +278,20 @@ class IntEnumMember(EnumMember):
         if issubclass(self.instance_class, enum.IntEnum):
             conv = typingctx.can_convert(self.dtype, other)
             return max(conv, Conversion.safe)
+
+
+from numba.core import types as numba_types
+
+numba_types.scalars.Boolean.register(Boolean)
+numba_types.scalars.Integer.register(Integer)
+numba_types.scalars.IntegerLiteral.register(IntegerLiteral)
+numba_types.scalars.BooleanLiteral.register(BooleanLiteral)
+numba_types.scalars.Float.register(Float)
+numba_types.scalars.Complex.register(Complex)
+numba_types.scalars._NPDatetimeBase.register(_NPDatetimeBase)
+numba_types.scalars.NPTimedelta.register(NPTimedelta)
+numba_types.scalars.NPDatetime.register(NPDatetime)
+numba_types.scalars.EnumClass.register(EnumClass)
+numba_types.scalars.IntEnumClass.register(IntEnumClass)
+numba_types.scalars.EnumMember.register(EnumMember)
+numba_types.scalars.IntEnumMember.register(IntEnumMember)

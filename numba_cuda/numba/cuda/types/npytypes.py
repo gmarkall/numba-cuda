@@ -263,6 +263,12 @@ class Record(Type):
         return f"Record({fields}, {self.size}, {self.aligned})"
 
 
+from numba.core import types as numba_types
+
+numba_types.npytypes.Record.register(Record)
+Record.register(numba_types.npytypes.Record)
+
+
 class DType(DTypeSpec, Opaque):
     """
     Type class associated with the `np.dtype`.

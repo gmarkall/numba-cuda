@@ -671,6 +671,7 @@ class StaticGetItemRecord(AbstractTemplate):
     key = "static_getitem"
 
     def generic(self, args, kws):
+        breakpoint()
         # Resolution of members for records
         record, idx = args
         if isinstance(record, types.Record) and isinstance(idx, str):

@@ -6,6 +6,7 @@ from collections import ChainMap
 
 from numba.cuda import types
 
+from numba.core.datamodel.registry import default_manager as numba_default_manager
 
 class DataModelManager(object):
     """Manages mapping of FE types to their corresponding data model"""
@@ -33,7 +34,10 @@ class DataModelManager(object):
             return self._cache[fetype]
         except KeyError:
             pass
-        handler = self._handlers[type(fetype)]
+        try:
+            handler = self._handlers[type(fetype)]
+        except KeyError:
+            handler = numba_default_manager._handlers[type(fetype)]
         model = self._cache[fetype] = handler(self, fetype)
         return model
 
