@@ -318,9 +318,9 @@ class BaseFunction(Callable):
         # from numba.cuda.core.target_extension import (
         #    get_local_target,
         # )  # circular
-        from numba.cuda.descriptor import cuda_target
+        from numba.cuda.descriptor import CUDATarget
 
-        target_hw = cuda_target
+        target_hw = CUDATarget
         order = utils.order_by_target_specificity(
             target_hw, self.templates, fnkey=self.key[0]
         )

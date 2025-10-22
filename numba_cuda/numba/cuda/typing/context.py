@@ -448,14 +448,19 @@ class BaseContext(object):
             loader = templates.RegistryLoader(registry)
             self._registries[registry] = loader
 
-        from numba.cuda.core.target_extension import (
-            get_local_target,
-            resolve_target_str,
-        )
+        # from numba.cuda.core.target_extension import (
+        #    get_local_target,
+        #    resolve_target_str,
+        # )
 
-        current_target = get_local_target(self)
+        from numba.cuda.descriptor import cuda_target
+
+        current_target = cuda_target
+        # current_target = get_local_target(self)
 
         def is_for_this_target(ftcls):
+            return True
+            # XXX: CLEAN UP
             metadata = getattr(ftcls, "metadata", None)
             if metadata is None:
                 return True

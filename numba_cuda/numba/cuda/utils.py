@@ -343,7 +343,10 @@ def order_by_target_specificity(target, templates, fnkey=""):
     def key(x):
         return target.__mro__.index(x[1])
 
-    order = [x[0] for x in sorted(usable, key=key)]
+    print(usable)
+    order = sorted(usable)
+
+    # order = [x[0] for x in sorted(usable, key=key)]
 
     if not order:
         msg = (
