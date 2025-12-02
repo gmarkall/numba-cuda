@@ -933,27 +933,26 @@ class CUDADIBuilder(DIBuilder):
         if name.startswith("$") or "." in name:
             # Do not emit llvm.dbg.declare on user variable alias
             return
-        else:
-            int_type = (ir.IntType,)
-            real_type = ir.FloatType, ir.DoubleType
-            if isinstance(lltype, int_type + real_type):
-                # Start with scalar variable, swtiching llvm.dbg.declare
-                # to llvm.dbg.value
-                return
-            else:
-                # Look up address space for this variable
-                addrspace = self._var_addrspace_map.get(name)
-                return super().mark_variable(
-                    builder,
-                    allocavalue,
-                    name,
-                    lltype,
-                    size,
-                    line,
-                    datamodel,
-                    argidx,
-                    addrspace=addrspace,
-                )
+
+        scalar_types = (ir.IntType, ir.FloatType, ir.DoubleType)
+        if isinstance(lltype, scalar_types):
+            # Start with scalar variable, swtiching llvm.dbg.declare
+            # to llvm.dbg.value
+            return
+
+        # Look up address space for this variable
+        addrspace = self._var_addrspace_map.get(name)
+        return super().mark_variable(
+            builder,
+            allocavalue,
+            name,
+            lltype,
+            size,
+            line,
+            datamodel,
+            argidx,
+            addrspace=addrspace,
+        )
 
     def update_variable(
         self,
