@@ -184,7 +184,7 @@ class DIBuilder(AbstractDIBuilder):
             self.emission_kind = "FullDebug"
 
         # Variable address space dictionary
-        self._var_addrspace_map = {}
+        self.var_addrspace_map = {}
 
         self.initialize()
 
@@ -192,9 +192,6 @@ class DIBuilder(AbstractDIBuilder):
         # Create the compile unit now because it is referenced when
         # constructing subprograms
         self.dicompileunit = self._di_compile_unit()
-
-    def _set_addrspace_map(self, map):
-        self._var_addrspace_map = map
 
     def get_dwarf_address_class(self, addrspace):
         # Map NVVM address space to DWARF address class.
@@ -462,7 +459,7 @@ class DIBuilder(AbstractDIBuilder):
         decl = cgutils.get_or_insert_function(m, fnty, "llvm.dbg.declare")
 
         # Look up address space for this variable
-        addrspace = self._var_addrspace_map.get(name)
+        addrspace = self.var_addrspace_map.get(name)
 
         mdtype = self._var_type(
             lltype, size, datamodel=datamodel, addrspace=addrspace

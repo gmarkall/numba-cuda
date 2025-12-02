@@ -1699,7 +1699,7 @@ class CUDALower(Lower):
         if self.context.enable_debuginfo and self._pending_shared_store:
             from numba.cuda.cudadrv import nvvm
 
-            self._addrspace_map[name] = nvvm.ADDRSPACE_SHARED
+            self.debuginfo.var_addrspace_map[name] = nvvm.ADDRSPACE_SHARED
             if not name.startswith("$") and not name.startswith("."):
                 self._pending_shared_store = False
 
@@ -1828,11 +1828,7 @@ class CUDALower(Lower):
         """
         super().pre_lower()
 
-        # Track address space for debug info
-        self._addrspace_map = {}
         self._pending_shared_store = False
-        if self.context.enable_debuginfo:
-            self.debuginfo._set_addrspace_map(self._addrspace_map)
 
         # Track polymorphic variables for debug info
         self.poly_var_typ_map = {}
