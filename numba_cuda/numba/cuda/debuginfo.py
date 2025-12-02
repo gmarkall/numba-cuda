@@ -106,6 +106,7 @@ class AbstractDIBuilder(metaclass=abc.ABCMeta):
         line,
         datamodel=None,
         argidx=None,
+        addrspace=None,
     ):
         """Emit debug info for the variable."""
         pass
@@ -146,6 +147,7 @@ class DummyDIBuilder(AbstractDIBuilder):
         line,
         datamodel=None,
         argidx=None,
+        addrspace=None,
     ):
         pass
 
@@ -449,13 +451,16 @@ class DIBuilder(AbstractDIBuilder):
         line,
         datamodel=None,
         argidx=None,
+        addrspace=None,
     ):
         arg_index = 0 if argidx is None else argidx
         m = self.module
         fnty = ir.FunctionType(ir.VoidType(), [ir.MetaDataType()] * 3)
         decl = cgutils.get_or_insert_function(m, fnty, "llvm.dbg.declare")
 
-        mdtype = self._var_type(lltype, size, datamodel=datamodel)
+        mdtype = self._var_type(
+            lltype, size, datamodel=datamodel, addrspace=addrspace
+        )
         name = name.replace(".", "$")  # for gdb to work correctly
         mdlocalvar = m.add_debug_info(
             "DILocalVariable",
@@ -652,7 +657,7 @@ class CUDADIBuilder(DIBuilder):
     def _set_addrspace_map(self, map):
         self._var_addrspace_map = map
 
-    def _var_type(self, lltype, size, datamodel=None):
+    def _var_type(self, lltype, size, datamodel=None, addrspace=None):
         is_bool = False
         is_int_literal = False
         is_grid_group = False
@@ -827,7 +832,6 @@ class CUDADIBuilder(DIBuilder):
                 )
 
         # Check if there's actually address space info to handle
-        addrspace = getattr(self, "_addrspace", None)
         if (
             isinstance(lltype, ir.LiteralStructType)
             and datamodel is not None
@@ -924,6 +928,7 @@ class CUDADIBuilder(DIBuilder):
         line,
         datamodel=None,
         argidx=None,
+        addrspace=None,
     ):
         if name.startswith("$") or "." in name:
             # Do not emit llvm.dbg.declare on user variable alias
@@ -937,8 +942,8 @@ class CUDADIBuilder(DIBuilder):
                 return
             else:
                 # Look up address space for this variable
-                self._addrspace = self._var_addrspace_map.get(name)
-                di = super().mark_variable(
+                addrspace = self._var_addrspace_map.get(name)
+                return super().mark_variable(
                     builder,
                     allocavalue,
                     name,
@@ -947,11 +952,8 @@ class CUDADIBuilder(DIBuilder):
                     line,
                     datamodel,
                     argidx,
+                    addrspace=addrspace,
                 )
-                # Clean up address space info
-                self._addrspace = None
-
-                return di
 
     def update_variable(
         self,
