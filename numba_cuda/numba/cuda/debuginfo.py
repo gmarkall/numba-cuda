@@ -938,20 +938,20 @@ class CUDADIBuilder(DIBuilder):
             else:
                 # Look up address space for this variable
                 self._addrspace = self._var_addrspace_map.get(name)
-                try:
-                    return super().mark_variable(
-                        builder,
-                        allocavalue,
-                        name,
-                        lltype,
-                        size,
-                        line,
-                        datamodel,
-                        argidx,
-                    )
-                finally:
-                    # Clean up address space info
-                    self._addrspace = None
+                di = super().mark_variable(
+                    builder,
+                    allocavalue,
+                    name,
+                    lltype,
+                    size,
+                    line,
+                    datamodel,
+                    argidx,
+                )
+                # Clean up address space info
+                self._addrspace = None
+
+                return di
 
     def update_variable(
         self,
