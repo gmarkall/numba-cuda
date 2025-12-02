@@ -1697,9 +1697,8 @@ class CUDALower(Lower):
         """
         # Track address space for debug info
         if self.context.enable_debuginfo and self._pending_shared_store:
-            from numba.cuda.cudadrv import nvvm
-
-            self.debuginfo.var_addrspace_map[name] = nvvm.ADDRSPACE_SHARED
+            addrclass = debuginfo.DwarfAddressClass.SHARED
+            self.debuginfo.var_addrclass_map[name] = addrclass
             if not name.startswith("$") and not name.startswith("."):
                 self._pending_shared_store = False
 

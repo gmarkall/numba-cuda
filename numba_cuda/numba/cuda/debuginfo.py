@@ -184,7 +184,7 @@ class DIBuilder(AbstractDIBuilder):
             self.emission_kind = "FullDebug"
 
         # Variable address space dictionary
-        self.var_addrspace_map = {}
+        self.var_addrclass_map = {}
 
         self.initialize()
 
@@ -192,19 +192,6 @@ class DIBuilder(AbstractDIBuilder):
         # Create the compile unit now because it is referenced when
         # constructing subprograms
         self.dicompileunit = self._di_compile_unit()
-
-    def get_dwarf_address_class(self, addrspace):
-        # Map NVVM address space to DWARF address class.
-        from numba.cuda.cudadrv import nvvm
-
-        addrspace_to_addrclass_dict = {
-            nvvm.ADDRSPACE_GENERIC: None,
-            nvvm.ADDRSPACE_GLOBAL: DwarfAddressClass.GLOBAL,
-            nvvm.ADDRSPACE_SHARED: DwarfAddressClass.SHARED,
-            nvvm.ADDRSPACE_CONSTANT: DwarfAddressClass.CONSTANT,
-            nvvm.ADDRSPACE_LOCAL: DwarfAddressClass.LOCAL,
-        }
-        return addrspace_to_addrclass_dict.get(addrspace)
 
     def _var_type(self, lltype, size, datamodel=None):
         if self._DEBUG:
@@ -458,11 +445,11 @@ class DIBuilder(AbstractDIBuilder):
         fnty = ir.FunctionType(ir.VoidType(), [ir.MetaDataType()] * 3)
         decl = cgutils.get_or_insert_function(m, fnty, "llvm.dbg.declare")
 
-        # Look up address space for this variable
-        addrspace = self.var_addrspace_map.get(name)
+        # Look up address class for this variable
+        addrclass = self.var_addrclass_map.get(name)
 
         mdtype = self._var_type(
-            lltype, size, datamodel=datamodel, addrspace=addrspace
+            lltype, size, datamodel=datamodel, addrclass=addrclass
         )
         name = name.replace(".", "$")  # for gdb to work correctly
         mdlocalvar = m.add_debug_info(
@@ -655,7 +642,7 @@ class CUDADIBuilder(DIBuilder):
         # Cache for local variable metadata type and line deduplication
         self._vartypelinemap = {}
 
-    def _var_type(self, lltype, size, datamodel=None, addrspace=None):
+    def _var_type(self, lltype, size, datamodel=None, addrclass=None):
         is_bool = False
         is_int_literal = False
         is_grid_group = False
@@ -834,7 +821,7 @@ class CUDADIBuilder(DIBuilder):
             isinstance(lltype, ir.LiteralStructType)
             and datamodel is not None
             and datamodel.inner_models()
-            and addrspace not in (None, 0)
+            and addrclass not in (None, 0)
         ):
             # Process struct with datamodel that has address space info
             meta = []
@@ -855,9 +842,7 @@ class CUDADIBuilder(DIBuilder):
                         "baseType": pointee_type,
                         "size": _BYTE_SIZE * size_field,
                     }
-                    dwarf_addrclass = self.get_dwarf_address_class(addrspace)
-                    if dwarf_addrclass is not None:
-                        meta_ptr["dwarfAddressSpace"] = int(dwarf_addrclass)
+                    meta_ptr["dwarfAddressSpace"] = int(addrclass)
                     basetype = m.add_debug_info("DIDerivedType", meta_ptr)
                 else:
                     basetype = self._var_type(
