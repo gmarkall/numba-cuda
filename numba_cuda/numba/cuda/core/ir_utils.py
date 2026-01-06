@@ -707,10 +707,19 @@ def remove_dead_block(
     # assuming all args are live after return
     removed = False
 
+    # print("++++++ BEGIN DUMP")
+    # func_ir.dump()
+    # print("++++++ END DUMP")
+
+    print(f"Remove dead extensions: {remove_dead_extensions}")
+    print(f"IR extension usedefs {analysis.ir_extension_usedefs}")
+
     # add statements in reverse order
     new_body = [block.terminator]
     # for each statement in reverse order, excluding terminator
     for stmt in reversed(block.body[:-1]):
+        print(f"STMT: {stmt}")
+        # breakpoint()
         if config.DEBUG_ARRAY_OPT >= 2:
             print("remove_dead_block", stmt)
         # aliases of lives are also live
@@ -779,10 +788,16 @@ def remove_dead_block(
             lives |= {v.name for v in stmt.list_vars()}
             if isinstance(stmt, ir.assign_types):
                 # make sure lhs is not used in rhs, e.g. a = g(a)
+                print(stmt)
                 if isinstance(stmt.value, ir.expr_types):
                     rhs_vars = {v.name for v in stmt.value.list_vars()}
+                    print(rhs_vars)
                     if lhs.name not in rhs_vars:
-                        lives.remove(lhs.name)
+                        try:
+                            print(f"Removing {lhs.name}")
+                            lives.remove(lhs.name)
+                        except KeyError:
+                            raise  # breakpoint()
                 else:
                     lives.remove(lhs.name)
 

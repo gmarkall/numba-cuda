@@ -108,6 +108,7 @@ class TranslateByteCode(FunctionPass):
         Analyze bytecode and translating to Numba IR
         """
         func_id = state["func_id"]
+        print(f"Translate {func_id.func_name}")
         bc = state["bc"]
         interp = Interpreter(func_id)
         func_ir = interp.interpret(bc)

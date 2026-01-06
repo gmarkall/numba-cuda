@@ -161,7 +161,7 @@ class AnalysisUsage(object):
         return "required: %s\n" % self._required
 
 
-_DEBUG = False
+_DEBUG = True
 
 
 def debug_print(*args, **kwargs):
@@ -287,6 +287,8 @@ class PassManager(object):
     @global_compiler_lock  # this need a lock, likely calls LLVM
     def _runPass(self, index, pss, internal_state):
         mutated = False
+
+        print(pss.name())
 
         def check(func, compiler_state):
             mangled = func(compiler_state)
