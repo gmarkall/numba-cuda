@@ -29,10 +29,14 @@ python -m pip install \
 rapids-logger "Shallow clone cuDF repository"
 git clone --single-branch --branch 'release/25.12' https://github.com/rapidsai/cudf.git
 
-pushd cudf
-
 # TODO: remove the patch and its application after 26.02 is released
-git apply ../ci/patches/cudf_numba_cuda_compatibility.patch
+patchfile="${PWD}/ci/patches/cudf_numba_cuda_compatibility.patch"
+pushd "$(python -c 'import site; print(site.getsitepackages()[0])')"
+# strip 3 slahes to apply from the root of the install
+patch -p3 < "${patchfile}"
+popd
+
+pushd cudf
 
 rapids-logger "Check GPU usage"
 nvidia-smi
