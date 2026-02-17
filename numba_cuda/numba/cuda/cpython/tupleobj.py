@@ -251,7 +251,7 @@ def getitem_typed(context, builder, sig, args):
 
         # Always branch and raise IndexError
         with builder.if_then(cgutils.true_bit):
-            context.fndesc.call_conv.return_user_exc(
+            context.exception_call_conv.return_user_exc(
                 builder, IndexError, errmsg_oob
             )
         # This is unreachable in runtime,
@@ -266,7 +266,7 @@ def getitem_typed(context, builder, sig, args):
         switch = builder.switch(idx, bbelse)
 
         with builder.goto_block(bbelse):
-            context.fndesc.call_conv.return_user_exc(
+            context.exception_call_conv.return_user_exc(
                 builder, IndexError, errmsg_oob
             )
 
@@ -349,7 +349,7 @@ def getitem_unituple(context, builder, sig, args):
 
         # Always branch and raise IndexError
         with builder.if_then(cgutils.true_bit):
-            context.fndesc.call_conv.return_user_exc(
+            context.exception_call_conv.return_user_exc(
                 builder, IndexError, errmsg_oob
             )
         # This is unreachable in runtime,
@@ -363,7 +363,7 @@ def getitem_unituple(context, builder, sig, args):
         switch = builder.switch(idx, bbelse)
 
         with builder.goto_block(bbelse):
-            context.fndesc.call_conv.return_user_exc(
+            context.exception_call_conv.return_user_exc(
                 builder, IndexError, errmsg_oob
             )
 

@@ -278,6 +278,17 @@ class CUDATargetContext(BaseContext):
         )
         return self.fndesc.call_conv
 
+    @property
+    def exception_call_conv(self):
+        """
+        Returns a calling convention suitable for exception handling in device
+        code. Always returns CUDACallConv (Numba ABI) even when the current
+        function uses C ABI, since C ABI doesn't support exceptions.
+        """
+        from numba.cuda.core.callconv import CUDACallConv
+
+        return CUDACallConv(self)
+
     def make_constant_array(self, builder, aryty, arr):
         """
         Unlike the parent version.  This returns a a pointer in the constant
@@ -402,6 +413,11 @@ class CUDATargetContext(BaseContext):
                 cstk = targetconfig.ConfigStack()
                 if cstk:
                     flags = cstk.top().copy()
+                    # Don't inherit calling convention from the entry point - device
+                    # functions should use the Numba ABI for exception handling unless
+                    # they are explicitly declared with a different ABI (e.g., via
+                    # declare_device)
+                    flags.call_conv = None
                 else:
                     msg = "There should always be a context stack; none found."
                     warnings.warn(msg, NumbaWarning)

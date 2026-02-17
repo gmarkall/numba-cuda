@@ -112,7 +112,12 @@ class BaseCallConv:
         return ch
 
     def _get_call_helper(self, builder):
-        return builder.__call_helper
+        # Try regular call helper first, then fall back to Numba call helper
+        # (used for exception handling in C ABI functions)
+        helper = getattr(builder, "_IRBuilder__call_helper", None)
+        if helper is None:
+            helper = getattr(builder, "_numba_call_helper", None)
+        return helper
 
     def unpack_exception(self, builder, pyapi, status):
         return pyapi.unserialize(status.excinfoptr)

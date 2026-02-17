@@ -364,6 +364,15 @@ class BaseLower:
         self.builder = llvm_ir.IRBuilder(self.entry_block)
         self.call_helper = self.call_conv.init_call_helper(self.builder)
 
+        # Also initialize a Numba ABI call helper for exception handling in
+        # internal operations, even when the function uses C ABI
+        from numba.cuda.core.callconv import CUDACallConv
+
+        numba_call_conv = CUDACallConv(self.context)
+        self.builder._numba_call_helper = numba_call_conv._make_call_helper(
+            self.builder
+        )
+
     def typeof(self, varname):
         return self.fndesc.typemap[varname]
 

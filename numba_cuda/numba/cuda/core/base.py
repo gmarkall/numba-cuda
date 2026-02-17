@@ -962,7 +962,11 @@ class BaseContext:
             builder, fndesc, sig, args
         )
         with cgutils.if_unlikely(builder, status.is_error):
-            fndesc.call_conv.return_status_propagate(builder, status)
+            # Always use Numba ABI (CUDACallConv) for propagating status from
+            # internal device functions, even when the caller uses C ABI
+            from numba.cuda.core.callconv import CUDACallConv
+
+            CUDACallConv(self).return_status_propagate(builder, status)
 
         res = imputils.fix_returning_optional(self, builder, sig, status, res)
         return res
